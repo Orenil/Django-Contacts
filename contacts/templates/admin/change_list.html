@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    <li>
+        <form method="post" enctype="multipart/form-data" action="">
+            {% csrf_token %}
+            <input type="file" name="csv_file" accept=".csv">
+            <input type="submit" value="Import CSV" class="button" name="_import_csv">
+        </form>
+    </li>
+{% endblock %}
