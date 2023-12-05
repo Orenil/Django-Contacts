@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends 'base.html' %}
+
+{% block title %}
     <title>Contact List</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="container mt-4">
         <!-- Upload CSV Form -->
         <h2>Upload CSV</h2>
@@ -44,6 +43,4 @@
             </tbody>
         </table>
     </div>
-</body>
-</html>
-
+{% endblock %}

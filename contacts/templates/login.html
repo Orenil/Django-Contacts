@@ -1,45 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom styles -->
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-            padding-top: 80px; /* Adjust as needed */
-        }
-        .login-form {
-            width: 300px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.1);
-        }
-        .login-form h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .login-form button[type="submit"] {
-            width: 100%;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="login-form">
-            <h2>Login</h2>
-            <form method="post">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">Login</button>
-            </form>
+{% extends 'base.html' %}
+{% load crispy_forms_tags %} 
+
+{% block title %}
+    <title>Follow-Up Networking - Login</title>
+{% endblock %}
+
+{% block content %}
+     <div class="content-section">
+         <form method="post">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4" style="font-weight: bold;">Log In</legend>
+            {{ form|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary submit-button">Login</button>
+            </div>
+        </form>
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Need an account? <a class="ml-2" href="{% url 'register' %}">Sign Up Now</a>
+            </small>
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

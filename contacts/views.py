@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from .models import Contact
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
+from .forms import UserRegisterForm
 import csv
 
 def login(request):
@@ -20,13 +22,19 @@ def login(request):
 
 def register(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserRegisterForm(request.POST)
         if form.is_valid():
             form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Your Account has been created! Please login')            
             return redirect('login')
     else:
-        form = UserCreationForm()
+        form = UserRegisterForm()
     return render(request, 'register.html', {'form': form})
+
+@login_required
+def profile(request):
+    return render(request, 'profile.html')
 
 def home(request):
     home = Contact.objects.all()

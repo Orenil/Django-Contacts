@@ -1,43 +1,26 @@
-<!-- register.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %} 
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>User Registration</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Custom styles */
-        .join-today {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        /* Additional custom styling */
-        .submit-button {
-            /* Add your custom styles for the submit button */
-        }
-        .already-account {
-            font-size: 14px;
-            color: #6c757d;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-5">
-        <h1 class="join-today">Join Today</h1>
-        <form method="post">
+{% block title %}
+    <title>Follow-Up Networking - Register</title>
+{% endblock %}
+
+{% block content %}
+     <div class="content-section">
+         <form method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary submit-button">Sign Up</button>
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4" style="font-weight: bold;">Sign Up Now</legend>
+            {{ form|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary submit-button">Sign Up</button>
+            </div>
         </form>
-        <small class="text-muted">
-            Already have an account? <a href="{% url 'login' %}">Sign In</a></small>
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Already have an account? <a class="ml-2" href="{% url 'login' %}">Sign In</a>
+            </small>
+        </div>
     </div>
-    <!-- Bootstrap JS and other scripts if needed -->
-    <!-- Ensure you have appropriate scripts for Bootstrap functionality -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+{% endblock %}
