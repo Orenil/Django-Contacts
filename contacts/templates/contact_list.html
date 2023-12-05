@@ -2,19 +2,33 @@
 <html>
 <head>
     <title>Contact List</title>
-    <!-- Include Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-4">
+        <!-- Upload CSV Form -->
+        <h2>Upload CSV</h2>
+        <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="csvFile">Choose CSV File:</label>
+                <input type="file" class="form-control-file" id="csvFile" name="csv_file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+        
+        <hr> <!-- Add a horizontal line as a separator -->
+        
         <h1>Contact List</h1>
+        
+        <!-- Display Contacts -->
         <table class="table">
             <thead>
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Title</th>
                     <th>Company</th>
                 </tr>
             </thead>
@@ -24,7 +38,6 @@
                         <td>{{ contact.name }}</td>
                         <td>{{ contact.email }}</td>
                         <td>{{ contact.phone }}</td>
-                        <td>{{ contact.title }}</td>
                         <td>{{ contact.company }}</td>
                     </tr>
                 {% endfor %}
@@ -33,3 +46,4 @@
     </div>
 </body>
 </html>
+

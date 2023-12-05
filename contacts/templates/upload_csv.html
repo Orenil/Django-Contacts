@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload CSV</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 style="font-size: 15px;">Upload CSV</h1>
+
+        <!-- Display Error Messages -->
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <!-- Upload Form -->
+        <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="csvFile">Choose CSV File:</label>
+                <input type="file" class="form-control-file" id="csvFile" name="csv_file">
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link rel="stylesheet" type="text/css" href="{% static 'main.css' %}">
+
+    {% if title %}
+        <title>Follow-Up Networking - {{ title }}</title>
+    {% else %}
+        <title>Follow-Up Networking</title>
+    {% endif %}
+</head>
+<body>
+    <header class="site-header">
+        <nav class="navbar navbar-expand-md navbar-dark bg-steel fixed-top">
+            <div class="container">
+                <a class="navbar-brand mr-4" href="{% url 'home' %}">Follow-up Networking</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggle" aria-controls="navbarToggle" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarToggle">
+                    <div class="navbar-nav mr-auto">
+                        <a class="nav-item nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-item nav-link" href="{% url 'contact-list' %}">Contact list</a>
+                    </div>
+                    <!-- Navbar Right Side -->
+                    <div class="navbar-nav ml-auto">
+                        <!-- Convert Login and Register buttons into navigation links -->
+                        <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
+                        <a class="nav-item nav-link" href="{% url 'register' %}">Register</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main role="main" class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <h2>Welcome to Follow-Up Networking!</h2>
+                <p>
+                    Follow-Up is a startup that helps students automate their job search and application, streamline networking,
+                    and receive the best technical and behavioral interview training in the world. Primarily by early career
+                    professionals for early career professionals.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS and other scripts if needed -->
+    <!-- Ensure you have appropriate scripts for Bootstrap functionality -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
