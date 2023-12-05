@@ -40,6 +40,7 @@ def home(request):
     home = Contact.objects.all()
     return render(request, 'home.html')
 
+@login_required
 def contact_list(request):
     contacts = Contact.objects.all()
     return render(request, 'contact_list.html', {'contacts': contacts})
