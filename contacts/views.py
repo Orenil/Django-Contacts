@@ -2,9 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 from .models import Contact
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
+from django.db.models import Count
 from .forms import UserRegisterForm
 import csv
 
@@ -15,7 +18,7 @@ def login(request):
             user = form.get_user()
             auth_login(request, user)
             # Redirect to a specific URL after successful login
-            return redirect('home')  # Replace 'home' with your desired URL
+            return redirect('home')
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
@@ -42,8 +45,19 @@ def home(request):
 
 @login_required
 def contact_list(request):
+    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
+    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
+    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
+    distinct_levels = Contact.objects.values_list('level', flat=True).distinct()
+
     contacts = Contact.objects.all()
-    return render(request, 'contact_list.html', {'contacts': contacts})
+    return render(request, 'contact_list.html', {
+        'contacts': contacts,
+        'distinct_types': distinct_types,
+        'distinct_companies': distinct_companies,
+        'distinct_locations': distinct_locations,
+        'distinct_levels': distinct_levels,
+    })
 
 def upload_csv(request):
     if request.method == 'POST' and request.FILES.get('csv_file'):
@@ -75,3 +89,40 @@ def upload_csv(request):
                 messages.error(request, f"Error uploading contacts: {e}")
     return render(request, 'upload_csv.html')
 
+
+@csrf_exempt
+def filter_contacts(request):
+    if request.method == 'POST':
+        type_filter = request.POST.get('type')
+        company_filter = request.POST.get('company')
+        location_filter = request.POST.get('location')
+        level_filter = request.POST.get('level')
+
+        # Filter contacts based on received parameters
+        filtered_contacts = Contact.objects.all()
+
+        if type_filter:
+            filtered_contacts = filtered_contacts.filter(type=type_filter)
+        if company_filter:
+            filtered_contacts = filtered_contacts.filter(company=company_filter)
+        if location_filter:
+            filtered_contacts = filtered_contacts.filter(location=location_filter)
+        if level_filter:
+            filtered_contacts = filtered_contacts.filter(level=level_filter)
+
+        # Prepare filtered contacts data to send back as JSON
+        contacts_data = list(filtered_contacts.values())  # Convert QuerySet to list of dictionaries
+
+        return JsonResponse({'contacts': contacts_data}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+def delete_contacts(request):
+    if request.method == 'POST':
+        contact_ids = request.POST.getlist('contactIds[]', [])
+        # Perform deletion of contacts based on the received IDs
+        # Implement your logic here to delete contacts from the database
+
+        return JsonResponse({'message': 'Contacts deleted successfully'})
+    else:
+        return JsonResponse({'message': 'Invalid request method'})

@@ -5,42 +5,247 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <!-- Upload CSV Form -->
-        <h2>Upload CSV</h2>
-        <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="csvFile">Choose CSV File:</label>
-                <input type="file" class="form-control-file" id="csvFile" name="csv_file">
+    <!-- Upload CSV Form -->
+    <h2>Upload CSV</h2>
+    <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="csvFile">Choose CSV File:</label>
+            <div class="input-group col-md-6">
+                <input type="text" class="form-control" id="selectedFileName" readonly>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-primary" id="chooseFileButton">Choose File</button>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary">Upload</button>
-        </form>
-        
-        <hr> <!-- Add a horizontal line as a separator -->
-        
-        <h1>Contact List</h1>
-        
-        <!-- Display Contacts -->
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Company</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for contact in contacts %}
-                    <tr>
-                        <td>{{ contact.name }}</td>
-                        <td>{{ contact.email }}</td>
-                        <td>{{ contact.phone }}</td>
-                        <td>{{ contact.company }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <input type="file" class="form-control-file" id="csvFile" name="csv_file" style="display: none;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="display: none;" id="uploadButton">Upload</button>
+    </form>
+
+    <!-- Filter Menu -->
+    <div class="filter-menu float-right">
+        <h4>Filter Contacts</h4>
+        <label for="typeFilter">Type:</label>
+        <select id="typeFilter">
+            <option value="">All</option>
+            {% for type in distinct_types %}
+                <option value="{{ type }}">{{ type }}</option>
+            {% endfor %}
+        </select>
+        <label for="companyFilter">Company:</label>
+        <select id="companyFilter">
+            <option value="">All</option>
+            {% for company in distinct_companies %}
+                <option value="{{ company }}">{{ company }}</option>
+            {% endfor %}
+        </select>
+        <label for="locationFilter">Location:</label>
+        <select id="locationFilter">
+            <option value="">All</option>
+            {% for location in distinct_locations %}
+                <option value="{{ location }}">{{ location }}</option>
+            {% endfor %}
+        </select>
+        <label for="levelFilter">Level:</label>
+        <select id="levelFilter">
+            <option value="">All</option>
+            {% for level in distinct_levels %}
+                <option value="{{ level }}">{{ level }}</option>
+            {% endfor %}
+        </select>
+        <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
     </div>
+
+    <hr> <!-- Add a horizontal line as a separator -->
+
+    <h1>Contact List</h1>
+
+    <!-- Display Contacts -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" id="selectAllCheckbox">
+                </th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Company</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Level</th>
+            </tr>
+        </thead>
+        <tbody id="contactTableBody">
+            {% for contact in contacts %}
+                <tr class="contact-row" data-id="{{ contact.id }}">
+                    <td>
+                        <input type="checkbox" class="contact-checkbox" value="{{ contact.id }}">
+                    </td>
+                    <td>{{ contact.first_name }} {{ contact.last_name }}</td>
+                    <td>{{ contact.email }}</td>
+                    <td>{{ contact.phone }}</td>
+                    <td>{{ contact.company }}</td>
+                    <td>{{ contact.type }}</td>
+                    <td>{{ contact.location }}</td>
+                    <td>{{ contact.level }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-center">
+        <button id="viewMoreButton" class="btn btn-primary">View More</button>
+        <div class="dropdown d-inline">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="actionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Perform Action
+            </button>
+            <div class="dropdown-menu" aria-labelledby="actionDropdown">
+                <a class="dropdown-item" href="#" id="performActionDelete" data-action="delete">Delete Selected</a>
+                <a class="dropdown-item" href="#" id="performActionSendCampaign" data-action="send_campaign">Send to Campaign</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const chooseFileButton = document.getElementById("chooseFileButton");
+            const uploadButton = document.getElementById("uploadButton");
+            const fileInput = document.getElementById("csvFile");
+
+            chooseFileButton.addEventListener("click", function() {
+                fileInput.click(); // Simulate click on the file input
+            });
+
+            fileInput.addEventListener("change", function() {
+                const fileName = fileInput.value.split("\\").pop(); // Extract the file name
+                document.getElementById("selectedFileName").value = fileName; // Display the file name in the text input
+                uploadButton.style.display = "block"; // Show the upload button once a file is chosen
+            });
+
+            const contacts = document.querySelectorAll(".contact-row");
+            for (let i = 10; i < contacts.length; i++) {
+                contacts[i].style.display = "none";
+            }
+
+            const viewMoreButton = document.getElementById("viewMoreButton");
+            viewMoreButton.addEventListener("click", function() {
+                for (let i = 10; i < contacts.length; i++) {
+                    if (contacts[i].style.display === "none") {
+                        contacts[i].style.display = "";
+                    } else {
+                        break;
+                    }
+                }
+            });
+
+            const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+            selectAllCheckbox.addEventListener("change", function() {
+                const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
+                contactCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+            });
+
+            const performActionDelete = document.getElementById("performActionDelete");
+            performActionDelete.addEventListener("click", function(event) {
+                event.preventDefault();
+                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
+                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
+
+                if (contactIds.length === 0) {
+                    console.log("No contacts selected to delete.");
+                    return; // No contacts selected, stop further execution
+                }
+
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch('/contact/delete/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({ contactIds: contactIds })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Handle success response (if needed)
+                        console.log("Contacts deleted successfully.");
+                    } else {
+                        // Handle non-successful response
+                        console.error('Delete operation failed.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            const performActionSendCampaign = document.getElementById("performActionSendCampaign");
+            performActionSendCampaign.addEventListener("click", function(event) {
+                event.preventDefault();
+                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
+                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
+
+                if (contactIds.length === 0) {
+                    console.log("No contacts selected to send to the campaign.");
+                    return; // No contacts selected, stop further execution
+                }
+
+                // Simulate sending the selected contacts to a campaign
+                console.log(`Sending contacts with IDs ${contactIds.join(', ')} to a campaign.`);
+                // You can add further logic here to handle the simulated action
+
+                alert(`Simulated action: Sent contacts with IDs ${contactIds.join(', ')} to a campaign.`);
+            });
+
+            const applyFilterButton = document.getElementById("applyFilterButton");
+            applyFilterButton.addEventListener("click", function() {
+                const typeFilter = document.getElementById("typeFilter").value;
+                const companyFilter = document.getElementById("companyFilter").value;
+                const locationFilter = document.getElementById("locationFilter").value;
+                const levelFilter = document.getElementById("levelFilter").value;
+
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch('/contact/filter/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: `csrfmiddlewaretoken=${csrfToken}&type=${typeFilter}&company=${companyFilter}&location=${locationFilter}&level=${levelFilter}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const contactTableBody = document.getElementById("contactTableBody");
+                    contactTableBody.innerHTML = "";
+
+                    if (data.contacts.length === 0) {
+                        contactTableBody.innerHTML = '<tr><td colspan="8">No contacts found.</td></tr>';
+                    } else {
+                        data.contacts.forEach(contact => {
+                            contactTableBody.innerHTML += `
+                                <tr class="contact-row" data-id="${contact.id}">
+                                    <td>
+                                        <input type="checkbox" class="contact-checkbox" value="${contact.id}">
+                                    </td>
+                                    <td>${contact.first_name} ${contact.last_name}</td>
+                                    <td>${contact.email}</td>
+                                    <td>${contact.phone}</td>
+                                    <td>${contact.company}</td>
+                                    <td>${contact.type}</td>
+                                    <td>${contact.location}</td>
+                                    <td>${contact.level}</td>
+                                </tr>`;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
 {% endblock %}
