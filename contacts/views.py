@@ -5,11 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .models import Contact
+from .models import Lead
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
 from .forms import UserRegisterForm
 import csv
+import json
 
 def login(request):
     if request.method == 'POST':
@@ -117,12 +119,50 @@ def filter_contacts(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-def delete_contacts(request):
-    if request.method == 'POST':
-        contact_ids = request.POST.getlist('contactIds[]', [])
-        # Perform deletion of contacts based on the received IDs
-        # Implement your logic here to delete contacts from the database
+def leads(request):
+    if request.method == 'GET':
+        try:
+            selected_contacts_param = request.GET.get('selected_contacts')
+            selected_contacts_ids = selected_contacts_param.split(',') if selected_contacts_param else []
 
-        return JsonResponse({'message': 'Contacts deleted successfully'})
-    else:
-        return JsonResponse({'message': 'Invalid request method'})
+            # Fetch contacts based on the selected contact IDs
+            selected_contacts = Contact.objects.filter(id__in=selected_contacts_ids)
+
+            context = {'selected_contacts': selected_contacts}
+            return render(request, 'leads.html', context)
+        except Exception as e:
+            # Handle exceptions or errors
+            # You can redirect or display an error message here
+            return render(request, 'error.html', {'error_message': str(e)})
+
+    # For other methods (POST, etc.), render the leads.html template with default content
+    return render(request, 'leads.html')
+
+def get_selected_contacts(request):
+    contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
+    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'phone', 'company', 'type', 'location', 'level')
+
+    return JsonResponse({'contacts': list(contacts)})
+
+@csrf_exempt
+def save_leads(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        leads_data = data.get('leads', [])  # Adjust this based on how data is sent
+
+        try:
+            for lead_data in leads_data:
+                Lead.objects.create(
+                    first_name=lead_data.get('first_name'),
+                    last_name=lead_data.get('last_name'),
+                    email=lead_data.get('email'),
+                    phone=lead_data.get('phone'),
+                    company=lead_data.get('company'),
+                    type=lead_data.get('type'),
+                    location=lead_data.get('location'),
+                    level=lead_data.get('level'),
+                    # Add other fields as necessary
+                )
+            return JsonResponse({'message': 'Leads saved successfully'}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

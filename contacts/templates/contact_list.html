@@ -22,6 +22,10 @@
         <button type="submit" class="btn btn-primary" style="display: none;" id="uploadButton">Upload</button>
     </form>
 
+    <div class="d-flex justify-content-end mt-3 mb-3">
+        <!-- Button at the top right to send selected contacts to the "Leads" page -->
+        <button id="performActionSendContacts" class="btn btn-secondary" data-action="send_contacts">Upload Leads</button>
+    </div>
     <!-- Filter Menu -->
     <div class="filter-menu float-right">
         <h4>Filter Contacts</h4>
@@ -58,6 +62,7 @@
 
     <hr> <!-- Add a horizontal line as a separator -->
 
+    
     <h1>Contact List</h1>
 
     <!-- Display Contacts -->
@@ -96,15 +101,6 @@
 
     <div class="text-center">
         <button id="viewMoreButton" class="btn btn-primary">View More</button>
-        <div class="dropdown d-inline">
-            <button class="btn btn-secondary dropdown-toggle" type="button" id="actionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Perform Action
-            </button>
-            <div class="dropdown-menu" aria-labelledby="actionDropdown">
-                <a class="dropdown-item" href="#" id="performActionDelete" data-action="delete">Delete Selected</a>
-                <a class="dropdown-item" href="#" id="performActionSendCampaign" data-action="send_campaign">Send to Campaign</a>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -140,66 +136,62 @@
             });
 
             const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+            const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
+
             selectAllCheckbox.addEventListener("change", function() {
-                const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
                 contactCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCheckbox.checked;
                 });
             });
 
-            const performActionDelete = document.getElementById("performActionDelete");
-            performActionDelete.addEventListener("click", function(event) {
+            function retrieveStoredContacts() {
+                const storedContactIds = sessionStorage.getItem('selectedContacts');
+                if (storedContactIds) {
+                    const contactIds = JSON.parse(storedContactIds);
+                    contactIds.forEach(contactId => {
+                        const checkbox = document.querySelector(`.contact-checkbox[value="${contactId}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                }
+            }
+            
+            function getStoredContactsQueryString() {
+                const storedContactIds = sessionStorage.getItem('selectedContacts');
+                if (storedContactIds) {
+                    const contactIds = JSON.parse(storedContactIds);
+                    return `?selected_contacts=${contactIds.join(',')}`;
+                }
+                return '';
+            }
+            
+            // On initial page load, modify the URL for leads if there are stored contacts
+            document.addEventListener("DOMContentLoaded", function() {
+                const storedContactsQuery = getStoredContactsQueryString();
+                if (storedContactsQuery) {
+                    history.replaceState(null, '', `/leads/${storedContactsQuery}`);
+                }
+            });
+            
+            const performActionSendContacts = document.getElementById("performActionSendContacts");
+            performActionSendContacts.addEventListener("click", function(event) {
                 event.preventDefault();
                 const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
                 const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
-
+            
                 if (contactIds.length === 0) {
-                    console.log("No contacts selected to delete.");
-                    return; // No contacts selected, stop further execution
+                    console.log("No contacts selected to upload to leads.");
+                    return;
                 }
-
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-                fetch('/contact/delete/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({ contactIds: contactIds })
-                })
-                .then(response => {
-                    if (response.ok) {
-                        // Handle success response (if needed)
-                        console.log("Contacts deleted successfully.");
-                    } else {
-                        // Handle non-successful response
-                        console.error('Delete operation failed.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+            
+                // Store selected contact IDs in session storage
+                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+            
+                // Redirect to the "Leads" page with selected contact IDs as parameters
+                window.location.href = `/leads/?selected_contacts=${contactIds.join(',')}`;
             });
-
-            const performActionSendCampaign = document.getElementById("performActionSendCampaign");
-            performActionSendCampaign.addEventListener("click", function(event) {
-                event.preventDefault();
-                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
-                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
-
-                if (contactIds.length === 0) {
-                    console.log("No contacts selected to send to the campaign.");
-                    return; // No contacts selected, stop further execution
-                }
-
-                // Simulate sending the selected contacts to a campaign
-                console.log(`Sending contacts with IDs ${contactIds.join(', ')} to a campaign.`);
-                // You can add further logic here to handle the simulated action
-
-                alert(`Simulated action: Sent contacts with IDs ${contactIds.join(', ')} to a campaign.`);
-            });
-
+            
             const applyFilterButton = document.getElementById("applyFilterButton");
             applyFilterButton.addEventListener("click", function() {
                 const typeFilter = document.getElementById("typeFilter").value;

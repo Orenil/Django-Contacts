@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Leads</title>
+{% endblock %}
+
+{% block content %}
+    <h1>Leads</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Company</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Loop through selected_contacts and populate the table -->
+            {% for contact in selected_contacts %}
+                <tr>
+                    <td>{{ contact.first_name }} {{ contact.last_name }}</td>
+                    <td>{{ contact.email }}</td>
+                    <td>{{ contact.phone }}</td>
+                    <td>{{ contact.company }}</td>
+                    <td>{{ contact.type }}</td>
+                    <td>{{ contact.location }}</td>
+                    <td>{{ contact.level }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="8">No contacts selected for the campaign.</td>
+                </tr>   
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Function to retrieve stored contacts from sessionStorage
+        function retrieveStoredContacts() {
+            const storedContactIds = sessionStorage.getItem('selectedContacts');
+            if (storedContactIds) {
+                const contactIds = JSON.parse(storedContactIds);
+                fetchSelectedContacts(contactIds);
+            }
+        }
+
+        // Function to fetch and display selected contacts
+        function fetchSelectedContacts(contactIds) {
+            fetch(`/get_selected_contacts/?contactIds=${contactIds.join(',')}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Display selected contacts in the Leads page
+                    const leadsTableBody = document.getElementById("leadsTableBody");
+                    leadsTableBody.innerHTML = "";
+
+                    if (data.contacts.length === 0) {
+                        leadsTableBody.innerHTML = '<tr><td colspan="7">No selected contacts found.</td></tr>';
+                    } else {
+                        data.contacts.forEach(contact => {
+                            leadsTableBody.innerHTML += `
+                                <tr>
+                                    <td>${contact.first_name} ${contact.last_name}</td>
+                                    <td>${contact.email}</td>
+                                    <td>${contact.phone}</td>
+                                    <td>${contact.company}</td>
+                                    <td>${contact.type}</td>
+                                    <td>${contact.location}</td>
+                                    <td>${contact.level}</td>
+                                </tr>`;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        // Event listener for clicking the Leads link
+        const leadsLink = document.querySelector('a[href="{% url "leads" %}"]');
+        leadsLink.addEventListener("click", function(event) {
+            event.preventDefault();
+            retrieveStoredContacts(); // Retrieve and display selected contacts when Leads link is clicked
+        });
+
+        // Fetch and display selected contacts when the Leads page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            retrieveStoredContacts();
+        });
+    </script>
+{% endblock %}

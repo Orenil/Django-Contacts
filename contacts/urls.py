@@ -11,5 +11,6 @@ urlpatterns = [
     path('contact-list/', views.contact_list, name='contact-list'),
     path('upload-csv/', views.upload_csv, name='upload_csv'),
     path('contact/filter/', views.filter_contacts, name='filter_contacts'),
-    path('contact/delete/', views.delete_contacts, name='delete_contacts')
+    path('leads/', views.leads, name='leads'),
+    path('get_selected_contacts/', views.get_selected_contacts, name='get_selected_contacts')
 ]
