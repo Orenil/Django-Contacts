@@ -1,5 +1,11 @@
 {% extends 'base.html' %}
 
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 {% block title %}
     <title>Contact List</title>
 {% endblock %}
@@ -23,8 +29,18 @@
     </form>
 
     <div class="d-flex justify-content-end mt-3 mb-3">
-        <!-- Button at the top right to send selected contacts to the "Leads" page -->
-        <button id="performActionSendContacts" class="btn btn-secondary" data-action="send_contacts">Upload Leads</button>
+        <!-- Add campaign dropdown -->
+        <div class="ml-2">
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="addCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Add to Campaign
+                </button>
+                <div class="dropdown-menu" aria-labelledby="addCampaignDropdown">
+                    <a class="dropdown-item" id="performActionSendContactsA">Campaign A</a>
+                    <a class="dropdown-item" id="performActionSendContactsB">Campaign B</a>
+                </div>
+            </div>
+        </div>
     </div>
     <!-- Filter Menu -->
     <div class="filter-menu float-right">
@@ -170,28 +186,99 @@
             document.addEventListener("DOMContentLoaded", function() {
                 const storedContactsQuery = getStoredContactsQueryString();
                 if (storedContactsQuery) {
-                    history.replaceState(null, '', `/leads/${storedContactsQuery}`);
+                    history.replaceState(null, '', `/campaignA/${storedContactsQuery}`);
                 }
             });
             
-            const performActionSendContacts = document.getElementById("performActionSendContacts");
-            performActionSendContacts.addEventListener("click", function(event) {
+            const performActionSendContactsA = document.getElementById("performActionSendContactsA");
+            performActionSendContactsA.addEventListener("click", function(event) {
                 event.preventDefault();
+                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
+                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
+
+                if (contactIds.length === 0) {
+                    console.log("No contacts selected to upload to Campaign A.");
+                    return;
+                }
+
+                // Store selected contact IDs in session storage
+                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+
+                // Redirect to the "campaignA" URL with selected contact IDs as parameters
+                window.location.href = `/campaignA/?selected_contacts=${contactIds.join(',')}`;
+            });
+
+            // Modify the performActionSendContactsB event listener
+            const performActionSendContactsB = document.getElementById("performActionSendContactsB");
+            performActionSendContactsB.addEventListener("click", function(event) {
+                event.preventDefault();
+                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
+                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
+
+                if (contactIds.length === 0) {
+                    console.log("No contacts selected to upload to Campaign B.");
+                    return;
+                }
+
+                // Store selected contact IDs in session storage
+                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+
+                // Redirect to the "campaignB" URL with selected contact IDs as parameters
+                window.location.href = `/campaignB/?selected_contacts=${contactIds.join(',')}`;
+            });
+            
+            function handleAddToCampaign(campaign) {
                 const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
                 const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
             
                 if (contactIds.length === 0) {
-                    console.log("No contacts selected to upload to leads.");
+                    console.log(`No contacts selected to upload to ${campaign}.`);
                     return;
                 }
             
                 // Store selected contact IDs in session storage
                 sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
             
-                // Redirect to the "Leads" page with selected contact IDs as parameters
-                window.location.href = `/leads/?selected_contacts=${contactIds.join(',')}`;
+                // Redirect to the specified campaign page with selected contact IDs as parameters
+                if (campaign === 'campaignA') {
+                    window.location.href = `CampaignA.html?selected_contacts=${contactIds.join(',')}`;
+                } else if (campaign === 'campaignB') {
+                    window.location.href = `CampaignB.html?selected_contacts=${contactIds.join(',')}`;
+                } else {
+                    console.log('Invalid campaign selected.');
+                }
+            }
+        
+            // Add click event listeners for dropdown items (Campaign A and Campaign B)
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const campaign = this.getAttribute('id');
+                    handleAddToCampaign(campaign);
+                });
             });
-            
+        
+            // Additional functionality for Add to Campaign dropdown
+            const addCampaignDropdown = document.getElementById('addCampaignDropdown');
+        
+            addCampaignDropdown.addEventListener('click', function(event) {
+                event.preventDefault();
+                // Toggle the visibility of the dropdown menu
+                addCampaignDropdown.nextElementSibling.classList.toggle('show');
+            });
+        
+            window.addEventListener('click', function(event) {
+                if (!event.target.matches('.dropdown-toggle')) {
+                    const dropdowns = document.getElementsByClassName('dropdown-menu');
+                    for (let i = 0; i < dropdowns.length; i++) {
+                        const openDropdown = dropdowns[i];
+                        if (openDropdown.classList.contains('show')) {
+                            openDropdown.classList.remove('show');
+                        }
+                    }
+                }
+            });
+
             const applyFilterButton = document.getElementById("applyFilterButton");
             applyFilterButton.addEventListener("click", function() {
                 const typeFilter = document.getElementById("typeFilter").value;

@@ -1,11 +1,17 @@
 {% extends 'base.html' %}
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
 {% block title %}
     <title>Leads</title>
 {% endblock %}
 
 {% block content %}
-    <h1>Leads</h1>
+    <div class="d-flex justify-content-end mt-3 mb-3">
+        <!-- Button at the top right to send selected contacts to the "Leads" page -->
+        <button id="performActionSaveLeads" class="btn btn-primary" data-action="save_leads">Save Leads</button>
+    </div>
+    <h1>CampaignB</h1>
     <table class="table">
         <thead>
             <tr>
@@ -32,13 +38,22 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8">No contacts selected for the campaign.</td>
+                    <td colspan="8">No Leads selected.</td>
                 </tr>   
             {% endfor %}
         </tbody>
     </table>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function getCSRFToken() {
+            const csrfCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken='));
+            if (csrfCookie) {
+                return csrfCookie.split('=')[1];
+            }
+            return null; // Handle case when CSRF token is not found
+        }
+
         // Function to retrieve stored contacts from sessionStorage
         function retrieveStoredContacts() {
             const storedContactIds = sessionStorage.getItem('selectedContacts');
@@ -79,16 +94,63 @@
                 });
         }
 
-        // Event listener for clicking the Leads link
-        const leadsLink = document.querySelector('a[href="{% url "leads" %}"]');
-        leadsLink.addEventListener("click", function(event) {
-            event.preventDefault();
-            retrieveStoredContacts(); // Retrieve and display selected contacts when Leads link is clicked
-        });
-
+      
         // Fetch and display selected contacts when the Leads page loads
         document.addEventListener("DOMContentLoaded", function() {
             retrieveStoredContacts();
         });
+        
+        // Function to save leads
+        function saveLeads() {
+            const leads = [];
+
+            // Select all table rows except the header row
+            const rows = document.querySelectorAll('table tr:not(:first-child)');
+
+            rows.forEach(row => {
+                const lead = {
+                    full_name: row.cells[0].textContent,
+                    email: row.cells[1].textContent,
+                    phone: row.cells[2].textContent,
+                    company: row.cells[3].textContent,
+                    type: row.cells[4].textContent,
+                    location: row.cells[5].textContent,
+                    level: row.cells[6].textContent,
+                };
+                leads.push(lead);
+            });
+
+            // Send the leads data to the server using fetch or AJAX
+            fetch('/save_leads/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(), // Ensure to include CSRF token
+                },
+                body: JSON.stringify({ leads: leads }),
+            })
+            .then(response => {
+                // Handle the response as needed
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        const performActionSaveLeads = document.getElementById("performActionSaveLeads");
+
+        // Function to handle click on "Save Leads" button
+        document.getElementById('performActionSaveLeads').addEventListener('click', function() {
+            saveLeads(); // Call the saveLeads function when the button is clicked
+        });
+
+        // Function to get CSRF token from cookies
+        function getCSRFToken() {
+            const csrfCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('csrftoken='));
+            if (csrfCookie) {
+                return csrfCookie.split('=')[1];
+            }
+            return null;
+        }
     </script>
 {% endblock %}
