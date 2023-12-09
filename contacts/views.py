@@ -4,11 +4,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .models import Contact
+from .models import Contact, SelectedContacts
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
 from .forms import UserRegisterForm
+from django.http import HttpResponse
 import csv
 import json
 
@@ -136,11 +137,9 @@ def campaignA(request):
             context = {'selected_contacts': selected_contacts}
             return render(request, 'campaignA.html', context)
         except Exception as e:
-            # Handle exceptions or errors
-            # You can redirect or display an error message here
             return render(request, 'error.html', {'error_message': str(e)})
 
-    # For other methods (POST, etc.), render the campaignA.html template with default content
+    
     return render(request, 'campaignA.html')
 
 def campaignB(request):
@@ -156,8 +155,26 @@ def campaignB(request):
             return render(request, 'campaignB.html', context)
         except Exception as e:
             # Handle exceptions or errors
-            # You can redirect or display an error message here
+            # redirect or display an error message here
             return render(request, 'error.html', {'error_message': str(e)})
 
-    # For other methods (POST, etc.), render the campaignA.html template with default content
     return render(request, 'campaignB.html')
+
+@login_required
+def add_to_campaign(request):
+    if request.method == 'POST':
+        contact_ids = request.POST.getlist('selected_contacts[]')  # Assuming contact IDs are sent in POST data
+
+        # Get or create SelectedContacts instance for the current user
+        selected_contacts, created = SelectedContacts.objects.get_or_create(user=request.user)
+
+        # Update contact_ids field with new selected contact IDs
+        selected_contacts.contact_ids = ','.join(contact_ids)
+        selected_contacts.save()
+
+        return HttpResponse('Selected contacts added successfully.')
+
+    return HttpResponse('Invalid request.')
+
+def view_campaign(request):
+    return render(request, 'campaign.html')

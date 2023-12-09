@@ -14,5 +14,5 @@ urlpatterns = [
     path('get_selected_contacts/', views.get_selected_contacts, name='get_selected_contacts'),
     path('campaignA/', views.campaignA, name='campaignA'),
     path('campaignB/', views.campaignB, name='campaignB'),
-    
+    path('campaign/', views.view_campaign, name='campaign')
 ]

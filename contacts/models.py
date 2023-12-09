@@ -12,8 +12,12 @@ class Contact(models.Model):
     type = models.CharField(max_length=100, default='None')
     location = models.CharField(max_length=100)
     level = models.CharField(max_length=100, default='None')
+    
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-
+class SelectedContacts(models.Model):
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)  # Assuming you're using Django's built-in User model
+    contact_ids = models.TextField()  # Store contact IDs as a comma-separated list or JSON string
+    created_at = models.DateTimeField(auto_now_add=True)

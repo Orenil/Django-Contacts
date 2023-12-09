@@ -201,8 +201,8 @@
                     return;
                 }
 
-                // Store selected contact IDs in session storage
-                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+                // Store selected contact IDs in local storage
+                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
 
                 // Redirect to the "campaignA" URL with selected contact IDs as parameters
                 window.location.href = `/campaignA/?selected_contacts=${contactIds.join(',')}`;
@@ -220,8 +220,8 @@
                     return;
                 }
 
-                // Store selected contact IDs in session storage
-                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+                // Store selected contact IDs in local storage
+                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
 
                 // Redirect to the "campaignB" URL with selected contact IDs as parameters
                 window.location.href = `/campaignB/?selected_contacts=${contactIds.join(',')}`;
@@ -237,7 +237,7 @@
                 }
             
                 // Store selected contact IDs in session storage
-                sessionStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
             
                 // Redirect to the specified campaign page with selected contact IDs as parameters
                 if (campaign === 'campaignA') {
