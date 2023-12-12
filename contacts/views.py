@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .models import Contact, SelectedContacts
+from .models import Contact, Campaign
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
@@ -125,56 +125,63 @@ def get_selected_contacts(request):
 
     return JsonResponse({'contacts': list(contacts)})
 
-def campaignA(request):
-    if request.method == 'GET':
-        try:
-            selected_contacts_param = request.GET.get('selected_contacts')
-            selected_contacts_ids = selected_contacts_param.split(',') if selected_contacts_param else []
-
-            # Fetch contacts based on the selected contact IDs
-            selected_contacts = Contact.objects.filter(id__in=selected_contacts_ids)
-
-            context = {'selected_contacts': selected_contacts}
-            return render(request, 'campaignA.html', context)
-        except Exception as e:
-            return render(request, 'error.html', {'error_message': str(e)})
-
-    
-    return render(request, 'campaignA.html')
-
-def campaignB(request):
-    if request.method == 'GET':
-        try:
-            selected_contacts_param = request.GET.get('selected_contacts')
-            selected_contacts_ids = selected_contacts_param.split(',') if selected_contacts_param else []
-
-            # Fetch contacts based on the selected contact IDs
-            selected_contacts = Contact.objects.filter(id__in=selected_contacts_ids)
-
-            context = {'selected_contacts': selected_contacts}
-            return render(request, 'campaignB.html', context)
-        except Exception as e:
-            # Handle exceptions or errors
-            # redirect or display an error message here
-            return render(request, 'error.html', {'error_message': str(e)})
-
-    return render(request, 'campaignB.html')
-
-@login_required
 def add_to_campaign(request):
     if request.method == 'POST':
-        contact_ids = request.POST.getlist('selected_contacts[]')  # Assuming contact IDs are sent in POST data
+        selected_contacts = request.POST.getlist('selected_contacts[]')
 
-        # Get or create SelectedContacts instance for the current user
-        selected_contacts, created = SelectedContacts.objects.get_or_create(user=request.user)
+        for contact in selected_contacts:
+            Campaign.objects.create(
+                full_name=contact.get('first_name', '') + ' ' + contact.get('last_name', ''),
+                email=contact.get('email'),
+                phone=contact.get('phone'),
+                title=contact.get('title'),
+                company=contact.get('company'),
+                type=contact.get('type'),
+                location=contact.get('location'),
+                level=contact.get('level')
+            )
 
-        # Update contact_ids field with new selected contact IDs
-        selected_contacts.contact_ids = ','.join(contact_ids)
-        selected_contacts.save()
+        return JsonResponse({'message': 'Contacts added to campaign successfully'}, status=200)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-        return HttpResponse('Selected contacts added successfully.')
+def campaign_page(request):
+    return render(request, 'campaign.html')
 
-    return HttpResponse('Invalid request.')
+def your_view(request):
+    # Assuming you have Campaign objects with names "Campaign A" and "Campaign B"
+    campaign_a = Campaign.objects.get(name="Campaign A")
+    campaign_b = Campaign.objects.get(name="Campaign B")
+
+    return render(request, 'campaign.html', {
+        'campaign_a_id': campaign_a.id,
+        'campaign_b_id': campaign_b.id,
+    })
 
 def view_campaign(request):
-    return render(request, 'campaign.html')
+    campaign_id = request.GET.get('campaign_id')
+
+    if campaign_id is not None and campaign_id != '':
+        # Case: When campaign_id is present and not empty in the request
+        campaign = get_object_or_404(Campaign, pk=campaign_id)
+        selected_contacts = campaign.contacts.all()
+
+        return render(request, 'campaign.html', {
+            'campaign': campaign,
+            'selected_contacts': selected_contacts,
+        })
+
+    else:
+        # Case: When campaign_id is either missing or empty in the request
+        first_campaign = Campaign.objects.first()
+
+        if first_campaign:
+            campaign = first_campaign
+            selected_contacts = campaign.contacts.all()
+
+            return render(request, 'campaign.html', {
+                'campaign': campaign,
+                'selected_contacts': selected_contacts,
+            })
+        else:
+            return render(request, 'campaign.html', {'error_message': 'No campaigns available!'})

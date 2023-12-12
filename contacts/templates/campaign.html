@@ -4,6 +4,12 @@
     <title>Campaigns</title>
 {% endblock %}
 
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 {% block content %}
     <div class="ml-2">
         <div class="dropdown">
@@ -11,19 +17,59 @@
                 View Campaign
             </button>
             <div class="dropdown-menu" aria-labelledby="viewCampaignDropdown">
-                <a class="dropdown-item" id="viewCampaignA">Campaign A</a>
-                <a class="dropdown-item" id="viewCampaignB">Campaign B</a>
+                <a class="dropdown-item view-campaign" data-campaign-id="{{ campaign_a_id }}" id="addToCampaignA">Campaign A</a>
+                <a class="dropdown-item view-campaign" data-campaign-id="{{ campaign_b_id }}" id="addToCampaignB">Campaign B</a>
             </div>
         </div>
     </div>
 
     <div id="campaignContent" class="mt-3">
-        Click on View Campaign to view a campaign.
+        {% if campaign %}
+            <h1>{{ campaign.name }}</h1>
+            <p>Date Created: {{ campaign.created_date }}</p>
+            <h2>Selected Contacts for {{ campaign.name }}</h2>
+            <!-- Display Contacts Table -->
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAllCheckbox">
+                        </th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Company</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Level</th>
+                    </tr>
+                </thead>
+                <tbody id="contactTableBody">
+                    {% for contact in selected_contacts %}
+                        <tr class="contact-row" data-id="{{ contact.id }}">
+                            <td>
+                                <input type="checkbox" class="contact-checkbox" value="{{ contact.id }}">
+                            </td>
+                            <td>{{ contact.first_name }} {{ contact.last_name }}</td>
+                            <td>{{ contact.email }}</td>
+                            <td>{{ contact.phone }}</td>
+                            <td>{{ contact.company }}</td>
+                            <td>{{ contact.type }}</td>
+                            <td>{{ contact.location }}</td>
+                            <td>{{ contact.level }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Please select a campaign to view</p>
+        {% endif %}
     </div>
 
     <script>
-        function loadCampaign(url) {
-            fetch(url)
+        function handleAddToCampaign(campaignId) {
+            // Make an API request to get contacts associated with the selected campaign
+            return fetch(`/view_campaign/?campaign_id=${campaignId}`)
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById('campaignContent').innerHTML = data;
@@ -32,18 +78,44 @@
                     console.error('Error:', error);
                 });
         }
+        
+        // Add click event listeners for dropdown items (Campaign A and Campaign B)
+        document.querySelectorAll('.view-campaign').forEach(item => {
+            item.addEventListener('click', async function(event) {
+                event.preventDefault();
+                const campaignId = this.getAttribute('data-campaign-id');
 
-        document.getElementById('viewCampaignA').addEventListener('click', function() {
-            loadCampaign('/campaignA/');
+                // Handle the campaign based on its ID
+                if (campaignId === '{{ campaign_a_id }}' || campaignId === '{{ campaign_b_id }}') {
+                    await handleAddToCampaign(campaignId);
+                    // Close the parent dropdown menu
+                    const dropdownMenu = this.closest('.dropdown-menu');
+                    dropdownMenu.classList.remove('show');
+                } else {
+                    console.log('Invalid campaign selected.');
+                }
+            });
         });
 
-        document.getElementById('viewCampaignB').addEventListener('click', function() {
-            loadCampaign('/campaignB/');
-        });
-
-        document.getElementById('viewCampaignDropdown').addEventListener('click', function(event) {
+        // Add click event listener for the "View Campaign" button dropdown
+        const viewCampaignDropdown = document.getElementById('viewCampaignDropdown');
+        viewCampaignDropdown.addEventListener('click', function(event) {
             event.preventDefault();
-            document.getElementById('campaignContent').innerHTML = 'Click on View Campaign to view a campaign.';
+            const campaignMenu = document.querySelector('[aria-labelledby="viewCampaignDropdown"]');
+            // Toggle the visibility of the dropdown menu
+            campaignMenu.classList.toggle('show');
+        });
+
+        // Close dropdowns when clicking outside
+        window.addEventListener('click', function(event) {
+            if (!event.target.matches('.dropdown-toggle')) {
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                dropdowns.forEach(dropdown => {
+                    if (dropdown.classList.contains('show')) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            }
         });
     </script>
 {% endblock %}

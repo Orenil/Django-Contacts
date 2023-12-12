@@ -8,8 +8,6 @@ class ContactAdmin(admin.ModelAdmin):
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
     get_full_name.admin_order_field = 'last_name'  # Allows column sorting
-    get_full_name.short_description = 'Name'  # Renames column header
     get_full_name.short_description = 'Full Name'
 
 admin.site.register(Contact, ContactAdmin)
-

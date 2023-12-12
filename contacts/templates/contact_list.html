@@ -36,8 +36,8 @@
                     Add to Campaign
                 </button>
                 <div class="dropdown-menu" aria-labelledby="addCampaignDropdown">
-                    <a class="dropdown-item" id="performActionSendContactsA">Campaign A</a>
-                    <a class="dropdown-item" id="performActionSendContactsB">Campaign B</a>
+                    <a class="dropdown-item" id="addToCampaignA">Campaign A</a>
+                    <a class="dropdown-item" id="addToCampaignB">Campaign B</a>
                 </div>
             </div>
         </div>
@@ -190,43 +190,6 @@
                 }
             });
             
-            const performActionSendContactsA = document.getElementById("performActionSendContactsA");
-            performActionSendContactsA.addEventListener("click", function(event) {
-                event.preventDefault();
-                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
-                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
-
-                if (contactIds.length === 0) {
-                    console.log("No contacts selected to upload to Campaign A.");
-                    return;
-                }
-
-                // Store selected contact IDs in local storage
-                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
-
-                // Redirect to the "campaignA" URL with selected contact IDs as parameters
-                window.location.href = `/campaignA/?selected_contacts=${contactIds.join(',')}`;
-            });
-
-            // Modify the performActionSendContactsB event listener
-            const performActionSendContactsB = document.getElementById("performActionSendContactsB");
-            performActionSendContactsB.addEventListener("click", function(event) {
-                event.preventDefault();
-                const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
-                const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
-
-                if (contactIds.length === 0) {
-                    console.log("No contacts selected to upload to Campaign B.");
-                    return;
-                }
-
-                // Store selected contact IDs in local storage
-                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
-
-                // Redirect to the "campaignB" URL with selected contact IDs as parameters
-                window.location.href = `/campaignB/?selected_contacts=${contactIds.join(',')}`;
-            });
-            
             function handleAddToCampaign(campaign) {
                 const selectedContacts = document.querySelectorAll('.contact-checkbox:checked');
                 const contactIds = Array.from(selectedContacts).map(checkbox => checkbox.value);
@@ -236,37 +199,42 @@
                     return;
                 }
             
-                // Store selected contact IDs in session storage
-                localStorage.setItem('selectedContacts', JSON.stringify(contactIds));
+                // Simulate adding contacts to the campaign 
+                console.log(`Adding contacts to ${campaign}:`, contactIds);
             
-                // Redirect to the specified campaign page with selected contact IDs as parameters
-                if (campaign === 'campaignA') {
-                    window.location.href = `CampaignA.html?selected_contacts=${contactIds.join(',')}`;
-                } else if (campaign === 'campaignB') {
-                    window.location.href = `CampaignB.html?selected_contacts=${contactIds.join(',')}`;
-                } else {
-                    console.log('Invalid campaign selected.');
-                }
+                // Display success message
+                alert(`Added contacts to ${campaign} successfully!`);
+            
+                // Clear the selected checkboxes after adding contacts
+                selectedContacts.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
             }
-        
+            
             // Add click event listeners for dropdown items (Campaign A and Campaign B)
             document.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', function(event) {
                     event.preventDefault();
                     const campaign = this.getAttribute('id');
-                    handleAddToCampaign(campaign);
+            
+                    // Check if the clicked item is Campaign A or Campaign B
+                    if (campaign === 'addToCampaignA' || campaign === 'addToCampaignB') {
+                        handleAddToCampaign(campaign);
+                    } else {
+                        console.log('Invalid campaign selected.');
+                    }
                 });
             });
-        
+            
             // Additional functionality for Add to Campaign dropdown
             const addCampaignDropdown = document.getElementById('addCampaignDropdown');
-        
+            
             addCampaignDropdown.addEventListener('click', function(event) {
                 event.preventDefault();
                 // Toggle the visibility of the dropdown menu
                 addCampaignDropdown.nextElementSibling.classList.toggle('show');
             });
-        
+            
             window.addEventListener('click', function(event) {
                 if (!event.target.matches('.dropdown-toggle')) {
                     const dropdowns = document.getElementsByClassName('dropdown-menu');
