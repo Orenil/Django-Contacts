@@ -3,15 +3,18 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from .models import Contact, Campaign
+from django.http import JsonResponse, HttpResponseServerError
+from .models import Contact
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
 from .forms import UserRegisterForm
 from django.http import HttpResponse
+from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNameFromContactId, getCompanyNameFromContactId, getTypeFromContactId, getTitleFromContactId
 import csv
 import json
+import requests
+import logging
 
 def login(request):
     if request.method == 'POST':
@@ -125,63 +128,99 @@ def get_selected_contacts(request):
 
     return JsonResponse({'contacts': list(contacts)})
 
-def add_to_campaign(request):
-    if request.method == 'POST':
-        selected_contacts = request.POST.getlist('selected_contacts[]')
+# Function to get the campaign ID based on the campaign name
+def get_campaign_id(api_key, campaign_name):
+    url = f"https://api.instantly.ai/api/v1/campaign/list?api_key={api_key}&skip=0&limit=100"
+    headers = {'Content-Type': 'application/json'}
+    response = requests.get(url, headers=headers)
 
-        for contact in selected_contacts:
-            Campaign.objects.create(
-                full_name=contact.get('first_name', '') + ' ' + contact.get('last_name', ''),
-                email=contact.get('email'),
-                phone=contact.get('phone'),
-                title=contact.get('title'),
-                company=contact.get('company'),
-                type=contact.get('type'),
-                location=contact.get('location'),
-                level=contact.get('level')
-            )
-
-        return JsonResponse({'message': 'Contacts added to campaign successfully'}, status=200)
+    if response.status_code == 200:
+        campaigns = response.json()
+        for campaign in campaigns:
+            if campaign.get('name') == campaign_name:
+                return campaign.get('id')
+        print("Campaign not found:", campaign_name)
+        return None
     else:
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
+        print("Failed to fetch campaigns")
+        print("Status code:", response.status_code)
+        print(response.text)
+        return None
 
+# Function to upload leads to the specified campaign
+def upload_to_campaign(api_key, campaign_id, selected_leads):
+    url = "https://api.instantly.ai/api/v1/lead/add"
+    leads = []
+
+    if selected_leads and isinstance(selected_leads, list):
+        for lead in selected_leads:
+            if isinstance(lead, dict) and all(key in lead for key in ('email', 'first_name', 'last_name', 'company', 'type', 'title')):
+                leads.append({
+                    "email": lead['email'],
+                    "first_name": lead['first_name'],
+                    "last_name": lead['last_name'],
+                    "company_name": lead['company'],
+                    "type": lead['type'],
+                    "title": lead['title'], 
+                })
+            else:
+                logging.error("Invalid lead format: %s", lead)
+    else:
+        logging.error("No leads found in selected_leads or selected_leads is not a list.")
+
+    payload = {
+        "api_key": api_key,
+        "campaign_id": campaign_id,
+        "skip_if_in_workspace": False,
+        "leads": leads
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response.raise_for_status()  # Raise an error for bad status codes
+
+        if response.status_code == 200:
+            logging.info("Leads uploaded successfully to campaign: %s", campaign_id)
+            logging.info(response.json())
+    except requests.exceptions.RequestException as e:
+        logging.error("Failed to upload leads to campaign: %s", campaign_id)
+        logging.error("Error: %s", str(e))
+        logging.error("Response text: %s", response.text if 'response' in locals() else "No response available")
+
+    return response.status_code if 'response' in locals() else None  # Return status code or None if no response
+
+@csrf_exempt
+def upload_to_campaign_view(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Load JSON data from request body
+
+            selected_leads = data.get('selected_leads')
+            campaign_name = data.get('campaign_name')
+
+            # Validate if selected_leads and campaign_name exist in the request
+            if not selected_leads or not campaign_name:
+                return JsonResponse({'error': 'Incomplete data received'}, status=400)
+
+            # Assuming api_key and campaign_id are available, fetch them from session or elsewhere
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+            campaign_id = get_campaign_id(api_key, campaign_name)
+
+            # Attempt to upload to campaign
+            upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
+
+            # Return a JSON response indicating the status or success/failure of the upload
+            return JsonResponse({'success': True, 'upload_result': upload_result})
+        
+        except Exception as e:
+            # Log the error for debugging purposes
+            logger.error(f"Error uploading to campaign: {e}", exc_info=True)
+            return HttpResponseServerError('Error occurred while processing the request.')
+        
+@login_required
 def campaign_page(request):
     return render(request, 'campaign.html')
 
-def your_view(request):
-    # Assuming you have Campaign objects with names "Campaign A" and "Campaign B"
-    campaign_a = Campaign.objects.get(name="Campaign A")
-    campaign_b = Campaign.objects.get(name="Campaign B")
-
-    return render(request, 'campaign.html', {
-        'campaign_a_id': campaign_a.id,
-        'campaign_b_id': campaign_b.id,
-    })
-
-def view_campaign(request):
-    campaign_id = request.GET.get('campaign_id')
-
-    if campaign_id is not None and campaign_id != '':
-        # Case: When campaign_id is present and not empty in the request
-        campaign = get_object_or_404(Campaign, pk=campaign_id)
-        selected_contacts = campaign.contacts.all()
-
-        return render(request, 'campaign.html', {
-            'campaign': campaign,
-            'selected_contacts': selected_contacts,
-        })
-
-    else:
-        # Case: When campaign_id is either missing or empty in the request
-        first_campaign = Campaign.objects.first()
-
-        if first_campaign:
-            campaign = first_campaign
-            selected_contacts = campaign.contacts.all()
-
-            return render(request, 'campaign.html', {
-                'campaign': campaign,
-                'selected_contacts': selected_contacts,
-            })
-        else:
-            return render(request, 'campaign.html', {'error_message': 'No campaigns available!'})

@@ -12,6 +12,7 @@ urlpatterns = [
     path('upload-csv/', views.upload_csv, name='upload_csv'),
     path('contact/filter/', views.filter_contacts, name='filter_contacts'),
     path('get_selected_contacts/', views.get_selected_contacts, name='get_selected_contacts'),
+    path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
     path('campaign/', views.campaign_page, name='campaign_page'),  # Campaign page
-    path('view-campaign/', views.view_campaign, name='view_campaign'),  # View Campaign
 ]
+
