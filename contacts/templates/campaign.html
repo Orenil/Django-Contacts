@@ -17,17 +17,15 @@
                 View Campaign
             </button>
             <div class="dropdown-menu" aria-labelledby="viewCampaignDropdown">
-                <a class="dropdown-item view-campaign" data-campaign-id="{{ campaign_a_id }}" id="addToCampaignA">Campaign A</a>
-                <a class="dropdown-item view-campaign" data-campaign-id="{{ campaign_b_id }}" id="addToCampaignB">Campaign B</a>
+                <a class="dropdown-item view-campaign" id="Django Campaign">Django Campaign</a>
+                <a class="dropdown-item view-campaign" id="Django Campaign 2">Django Campaign 2</a>
             </div>
         </div>
     </div>
 
     <div id="campaignContent" class="mt-3">
-        {% if campaign %}
-            <h1>{{ campaign.name }}</h1>
-            <p>Date Created: {{ campaign.created_date }}</p>
-            <h2>Selected Contacts for {{ campaign.name }}</h2>
+        {% if selected_campaign %}
+            <h2>Leads for {{ selected_campaign.name }}</h2>
             <!-- Display Contacts Table -->
             <table class="table">
                 <thead>
@@ -35,28 +33,27 @@
                         <th>
                             <input type="checkbox" id="selectAllCheckbox">
                         </th>
-                        <th>Full Name</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
                         <th>Email</th>
-                        <th>Phone</th>
                         <th>Company</th>
+                        <th>Title</th>
                         <th>Type</th>
-                        <th>Location</th>
-                        <th>Level</th>
                     </tr>
                 </thead>
-                <tbody id="contactTableBody">
-                    {% for contact in selected_contacts %}
-                        <tr class="contact-row" data-id="{{ contact.id }}">
+                <tbody id="leadTableBody">
+                    {% for lead in selected_leads %}
+                        <tr class="contact-row" data-id="{{ lead.id }}">
                             <td>
-                                <input type="checkbox" class="contact-checkbox" value="{{ contact.id }}">
+                                <input type="checkbox" class="contact-checkbox" value="{{ lead.id }}">
                             </td>
-                            <td>{{ contact.first_name }} {{ contact.last_name }}</td>
-                            <td>{{ contact.email }}</td>
-                            <td>{{ contact.phone }}</td>
-                            <td>{{ contact.company }}</td>
-                            <td>{{ contact.type }}</td>
-                            <td>{{ contact.location }}</td>
-                            <td>{{ contact.level }}</td>
+                            <td>{{ lead.first_name }}</td>
+                            <td>{{ lead.last_name }}</td>
+                            <td>{{ lead.email }}</td>
+                            <td>{{ lead.company }}</td>
+                            <td>{{ lead.title }}</td>
+                            <td>{{ lead.type }}</td>
+                            <td>{{ lead.level }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -67,28 +64,59 @@
     </div>
 
     <script>
-        function handleAddToCampaign(campaignId) {
-            // Make an API request to get contacts associated with the selected campaign
-            return fetch(`/view_campaign/?campaign_id=${campaignId}`)
-                .then(response => response.text())
+        function handleAddToCampaign(campaign) {
+            return fetch(`/get_campaign_leads/?campaign=${campaign}`)
+                .then(response => response.json())
                 .then(data => {
-                    document.getElementById('campaignContent').innerHTML = data;
+                    let leadsTableHTML = '';
+                    if (Array.isArray(data)) {
+                        data.forEach(lead => {
+                            // Create table rows for each lead
+                            leadsTableHTML += `
+                                <tr>
+                                    <td>${lead.first_name}</td>
+                                    <td>${lead.last_name}</td>
+                                    <td>${lead.email}</td>
+                                    <td>${lead.company}</td>
+                                    <td>${lead.title}</td>
+                                    <td>${lead.type}</td>
+                                </tr>
+                            `;
+                        });
+                    } else if (typeof data === 'object') {
+                        // Assuming data is an object with lead information
+                        for (const key in data) {
+                            if (data.hasOwnProperty(key)) {
+                                const lead = data[key];
+                                leadsTableHTML += `
+                                    <tr>
+                                        <td>${lead.first_name}</td>
+                                        <td>${lead.last_name}</td>
+                                        <td>${lead.email}</td>
+                                        <td>${lead.company}</td>
+                                        <td>${lead.title}</td>
+                                        <td>${lead.type}</td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                    }
+                    // Update the table body with the generated HTML
+                    document.getElementById('leadTableBody').innerHTML = leadsTableHTML;
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
         }
         
-        // Add click event listeners for dropdown items (Campaign A and Campaign B)
         document.querySelectorAll('.view-campaign').forEach(item => {
             item.addEventListener('click', async function(event) {
                 event.preventDefault();
-                const campaignId = this.getAttribute('data-campaign-id');
-
-                // Handle the campaign based on its ID
-                if (campaignId === '{{ campaign_a_id }}' || campaignId === '{{ campaign_b_id }}') {
-                    await handleAddToCampaign(campaignId);
-                    // Close the parent dropdown menu
+                const campaign = this.getAttribute('id');
+        
+                // Move the condition inside the click event listener
+                if (campaign === 'Django Campaign' || campaign === 'Django Campaign 2') {
+                    await handleAddToCampaign(campaign);
                     const dropdownMenu = this.closest('.dropdown-menu');
                     dropdownMenu.classList.remove('show');
                 } else {
@@ -96,17 +124,14 @@
                 }
             });
         });
-
-        // Add click event listener for the "View Campaign" button dropdown
+        
         const viewCampaignDropdown = document.getElementById('viewCampaignDropdown');
         viewCampaignDropdown.addEventListener('click', function(event) {
             event.preventDefault();
             const campaignMenu = document.querySelector('[aria-labelledby="viewCampaignDropdown"]');
-            // Toggle the visibility of the dropdown menu
             campaignMenu.classList.toggle('show');
         });
-
-        // Close dropdowns when clicking outside
+        
         window.addEventListener('click', function(event) {
             if (!event.target.matches('.dropdown-toggle')) {
                 const dropdowns = document.querySelectorAll('.dropdown-menu');
