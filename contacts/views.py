@@ -220,63 +220,58 @@ def upload_to_campaign_view(request):
             return HttpResponseServerError('Error occurred while processing the request.')
 
 @login_required
-def campaign_page(request):
+def get_campaign_leads(request):
     api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
 
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        campaign_name = data.get('campaign_name')
-
-        if campaign_name:
-            campaign_id = get_campaign_id(api_key, campaign_name)
-
-            if campaign_id:
-                campaign_content = get_instantly_ai_campaign_content(api_key, campaign_id)
-                return render(request, 'campaign.html', {'campaign_content': campaign_content})
-            else:
-                error_message = f"Could not retrieve campaign ID for {campaign_name}."
-                logging.error(error_message)
-                return render(request, 'campaign.html', {'error': error_message})
-        else:
-            error_message = "No campaign name provided."
-            logging.error(error_message)
-            return render(request, 'campaign.html', {'error': error_message})
-    else:
-        return render(request, 'campaign.html')
-
-def retrieve_selected_leads_from_instantly_api(api_key, campaign_id):
-    url = f"https://api.instantly.ai/api/v1/campaign/get/name?api_key={api_key}&campaign_id={campaign_id}"
-    headers = {
-        'Content-Type': 'application/json'
-    }
-
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad status codes
-
-        if response.status_code == 200:
-            campaign_data = response.json()
-            selected_leads = campaign_data.get('leads')  # Assuming the leads are present in the campaign data
-            return selected_leads
-        else:
-            logging.error("Failed to retrieve leads from Instantly.ai")
-            return None
-    except requests.RequestException as e:
-        logging.error(f"Error retrieving leads from Instantly.ai: {e}")
-        return None
-
-def get_campaign_leads(request):
     if request.method == 'GET':
         campaign_id = request.GET.get('campaign_id')
 
         if campaign_id:
-            selected_leads = retrieve_selected_leads_from_instantly_api(api_key, campaign_id)
-            
-            if selected_leads is not None:
-                return JsonResponse({'selected_leads': selected_leads})
-            else:
-                return JsonResponse({'error': 'Failed to fetch leads from Instantly.ai'}, status=400)
+            url = f"https://api.instantly.ai/api/v1/lead/get"
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {"6efvz60989m4q3jnwvyhm2x7wa1c"}' 
+            }
+
+            email = 'john@gmail.com'  # You may change this if needed
+
+            params = {
+                'api_key': api_key,
+                'campaign_id': campaign_id,
+                'email': email
+            }
+
+            try:
+                response = requests.get(url, headers=headers, params=params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    leads = []
+
+                    for lead in data:
+                        lead_details = {
+                            "email": lead.get('lead_data', {}).get('email'),
+                            "first_name": lead.get('lead_data', {}).get('firstName'),
+                            "last_name": lead.get('lead_data', {}).get('lastName'),
+                            "company_name": lead.get('lead_data', {}).get('companyName'),
+                            "campaign_name": lead.get('campaign_name')
+                        }
+                        leads.append(lead_details)
+
+                    return JsonResponse({'all_leads': leads})
+                else:
+                    return JsonResponse({'error': 'Failed to fetch leads from Instantly.ai'}, status=400)
+            except requests.RequestException as e:
+                return JsonResponse({'error': f'Error fetching leads: {e}'}, status=400)
         else:
             return JsonResponse({'error': 'No campaign ID provided'}, status=400)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@login_required
+def campaign_page(request):
+    if request.method == 'POST':
+        leads_data = get_campaign_leads(request).data.get('all_leads', [])
+        return JsonResponse({'leads_data': leads_data})
+    else:
+        return render(request, 'campaign.html')
