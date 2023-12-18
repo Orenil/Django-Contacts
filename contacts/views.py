@@ -4,8 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponseServerError
-from .models import Contact
+from .models import Contact, Campaign_Emails
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
 from .forms import UserRegisterForm
@@ -192,6 +193,22 @@ def upload_to_campaign(api_key, campaign_id, selected_leads):
 
     return response.status_code if 'response' in locals() else None  # Return status code or None if no response
 
+def upload_to_campaign_emails(selected_emails, user_id, campaign_name):
+    leads_to_upload = []
+
+    # Prepare Campaign_Emails instances for bulk creation
+    for email in selected_emails:
+        leads_to_upload.append(Campaign_Emails(user_id=user_id, email=email, campaign_name=campaign_name))
+
+    try:
+        Campaign_Emails.objects.bulk_create(leads_to_upload)
+        logging.info("Leads uploaded successfully to campaign_emails model.")
+        return True
+    except Exception as e:
+        logging.error("Failed to upload leads to campaign_emails model.")
+        logging.error("Error: %s", str(e))
+        return False
+
 @csrf_exempt
 def upload_to_campaign_view(request):
     if request.method == 'POST':
@@ -200,6 +217,7 @@ def upload_to_campaign_view(request):
 
             selected_leads = data.get('selected_leads')
             campaign_name = data.get('campaign_name')
+            user_id = request.user.id 
 
             # Validate if selected_leads and campaign_name exist in the request
             if not selected_leads or not campaign_name:
@@ -208,70 +226,27 @@ def upload_to_campaign_view(request):
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
             campaign_id = get_campaign_id(api_key, campaign_name)
 
-            # Attempt to upload to campaign
+            # Attempt to upload to campaign to Instantly.AI
             upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
+            
+            # Extract emails from selected_leads
+            selected_emails = [lead.get('email') for lead in selected_leads if 'email' in lead]
 
-            # Return a JSON response indicating the status or success/failure of the upload
-            return JsonResponse({'success': True, 'upload_result': upload_result})
+            # Attempt to upload emails to campaign_emails model using bulk_create
+            campaign_emails_upload_success = upload_to_campaign_emails(selected_emails, user_id, campaign_name)
+
+            # Return a JSON response indicating the success/failure of the uploads
+            if upload_result is not None and campaign_emails_upload_success:
+                return JsonResponse({'success': True, 'instantly_upload_result': upload_result})
+            else:
+                return JsonResponse({'error': 'Failed to upload leads'}, status=500)
         
         except Exception as e:
             # Log the error for debugging purposes
-            logger.error(f"Error uploading to campaign: {e}", exc_info=True)
             return HttpResponseServerError('Error occurred while processing the request.')
 
 @login_required
-def get_campaign_leads(request):
-    api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
-
-    if request.method == 'GET':
-        campaign_id = request.GET.get('campaign_id')
-
-        if campaign_id:
-            url = f"https://api.instantly.ai/api/v1/lead/get"
-            headers = {
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {"6efvz60989m4q3jnwvyhm2x7wa1c"}' 
-            }
-
-            email = 'john@gmail.com'  # You may change this if needed
-
-            params = {
-                'api_key': api_key,
-                'campaign_id': campaign_id,
-                'email': email
-            }
-
-            try:
-                response = requests.get(url, headers=headers, params=params)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    leads = []
-
-                    for lead in data:
-                        lead_details = {
-                            "email": lead.get('lead_data', {}).get('email'),
-                            "first_name": lead.get('lead_data', {}).get('firstName'),
-                            "last_name": lead.get('lead_data', {}).get('lastName'),
-                            "company_name": lead.get('lead_data', {}).get('companyName'),
-                            "campaign_name": lead.get('campaign_name')
-                        }
-                        leads.append(lead_details)
-
-                    return JsonResponse({'all_leads': leads})
-                else:
-                    return JsonResponse({'error': 'Failed to fetch leads from Instantly.ai'}, status=400)
-            except requests.RequestException as e:
-                return JsonResponse({'error': f'Error fetching leads: {e}'}, status=400)
-        else:
-            return JsonResponse({'error': 'No campaign ID provided'}, status=400)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
-
-@login_required
 def campaign_page(request):
-    if request.method == 'POST':
-        leads_data = get_campaign_leads(request).data.get('all_leads', [])
-        return JsonResponse({'leads_data': leads_data})
-    else:
-        return render(request, 'campaign.html')
+    campaign_emails = Campaign_Emails.objects.all()  # Fetch all campaign emails
+    distinct_campaigns = Campaign_Emails.objects.values_list('campaign_name', flat=True).distinct()
+    return render(request, 'campaign.html', {'campaign_emails': campaign_emails, 'distinct_campaigns': distinct_campaigns})

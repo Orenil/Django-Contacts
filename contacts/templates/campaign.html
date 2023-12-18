@@ -1,3 +1,4 @@
+<!-- campaign_page.html -->
 {% extends 'base.html' %}
 
 {% block title %}
@@ -9,110 +10,84 @@
 {% block content %}
     <div class="ml-2">
         <!-- Form for selecting a campaign -->
-        <form id="campaignForm" method="POST" action="{% url 'campaign_page' %}">
-            {% csrf_token %}
-            <input type="hidden" id="selectedCampaignInput" name="selected_campaign" value="">
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="viewCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    View Campaign
-                </button>
-                <div class="dropdown-menu" aria-labelledby="viewCampaignDropdown">
-                    <a class="dropdown-item view-campaign" id="Django Campaign" href="#">Django Campaign</a>
-                    <a class="dropdown-item view-campaign" id="Django Campaign 2" href="#">Django Campaign 2</a>
-                </div>
+        <div class="d-flex align-items-center">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="viewCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                View Specific Campaign
+            </button>
+            <div class="dropdown-menu" aria-labelledby="viewCampaignDropdown">
+                <!-- Hardcoded campaign names -->
+                <a class="dropdown-item view-campaign" id="Django Campaign" href="#">Django Campaign</a>
+                <a class="dropdown-item view-campaign" id="Django Campaign 2" href="#">Django Campaign 2</a>
             </div>
-            <button type="submit" style="display: none;" id="submitCampaignForm">Submit</button>
-        </form>
+        </div>
+        <button class="btn btn-info ml-3" id="viewAllButton">View All Campaigns</button>
     </div>
 
     <div id="campaignContent" class="mt-3">
-        <h2>Leads List</h2>
+        <h2>Campaign Details</h2>
         <table class="table">
             <thead>
                 <tr>
+                    <th>Username</th>
                     <th>Email</th>
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Company</th>
+                    <th>Campaign Name</th>
                 </tr>
             </thead>
-            <tbody id="leadTableBody">
-                <!-- Dynamic content will be inserted here -->
+            <tbody id="campaignEmailsTableBody">
+                <!-- Dynamic content for campaign emails -->
+                {% for email_entry in campaign_emails %}
+                    <tr data-campaign="{{ email_entry.campaign_name }}">
+                        <td>{{ email_entry.user.username }}</td>
+                        <td>{{ email_entry.email }}</td>
+                        <td>{{ email_entry.campaign_name }}</td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
 
     <script>
-        function getCorrectCampaignID(campaignName) {
-            const campaignMappings = {
-                'Django Campaign': 'df37b2cf-e071-4bc4-857d-0d4971b9a1ea',
-                'Django Campaign 2': 'd5f51692-48ed-49a4-a0e3-857355b23e79'
-            };
-            
-            return campaignMappings[campaignName] || null;
+        function filterCampaignTable(campaignName) {
+            const tableRows = document.querySelectorAll('#campaignEmailsTableBody tr');
+            tableRows.forEach(row => {
+                if (row.getAttribute('data-campaign') === campaignName) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
 
-        function handleViewCampaignLeads(campaign) {
-            const campaignID = getCorrectCampaignID(campaign);
-    
-            fetch(`/get_campaign_leads/?campaign_id=${encodeURIComponent(campaignID)}`)
-                .then(response => response.json())
-                .then(data => {
-                    const leadsTableBody = document.getElementById('leadTableBody');
-                    const selectedCampaignName = document.getElementById('selectedCampaignName');
-
-                    if (data.all_leads && data.all_leads.length > 0) {
-                        let leadsTableHTML = '';
-                        data.all_leads.forEach(lead => {
-                            leadsTableHTML += `
-                                <tr>
-                                    <td>${lead.email}</td>
-                                    <td>${lead.first_name}</td>
-                                    <td>${lead.last_name}</td>
-                                    <td>${lead.company_name}</td>
-                                </tr>
-                            `;
-                        });
-                        leadsTableBody.innerHTML = leadsTableHTML;
-                        const campaignElement = document.getElementById(campaignID);
-                        if (campaignElement) {
-                            selectedCampaignName.innerText = campaignElement.innerText;
-                        } else {
-                            console.error(`Element with ID ${campaignID} not found`);
-                        }
-                    } else {
-                        leadsTableBody.innerHTML = '<tr><td colspan="6">No leads found for this campaign.</td></tr>';
-                        selectedCampaignName.innerText = '';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+        function viewAllCampaigns() {
+            const tableRows = document.querySelectorAll('#campaignEmailsTableBody tr');
+            tableRows.forEach(row => {
+                row.style.display = '';
+            });
         }
 
         function initEventListeners() {
             document.querySelectorAll('.view-campaign').forEach(item => {
-                item.addEventListener('click', async function(event) {
+                item.addEventListener('click', function(event) {
                     event.preventDefault();
                     const campaign = this.getAttribute('id');
-            
-                    if (campaign === 'Django Campaign' || campaign === 'Django Campaign 2') {
-                        await handleViewCampaignLeads(campaign);
-                        const dropdownMenu = this.closest('.dropdown-menu');
-                        dropdownMenu.classList.remove('show');
-                    } else {
-                        console.log('Invalid campaign selected.');
-                    }
+                    filterCampaignTable(campaign);
                 });
             });
-            
+
             const viewCampaignDropdown = document.getElementById('viewCampaignDropdown');
             viewCampaignDropdown.addEventListener('click', function(event) {
                 event.preventDefault();
                 const campaignMenu = document.querySelector('[aria-labelledby="viewCampaignDropdown"]');
                 campaignMenu.classList.toggle('show');
             });
-            
+
+            const viewAllButton = document.getElementById('viewAllButton');
+            viewAllButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                viewAllCampaigns();
+            });
+
             window.addEventListener('click', function(event) {
                 if (!event.target.matches('.dropdown-toggle')) {
                     const dropdowns = document.querySelectorAll('.dropdown-menu');

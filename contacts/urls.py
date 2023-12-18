@@ -13,7 +13,7 @@ urlpatterns = [
     path('contact/filter/', views.filter_contacts, name='filter_contacts'),
     path('get_selected_contacts/', views.get_selected_contacts, name='get_selected_contacts'),
     path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
-    path('campaign/', views.campaign_page, name='campaign_page'),
-    path('get_campaign_leads/', views.get_campaign_leads, name='get_campaign_leads'),
+    path('upload_to_campaign_emails/', views.upload_to_campaign_emails, name='upload_to_campaign_emails'),
+    path('campaign/', views.campaign_page, name='campaign_page')
 ]
 

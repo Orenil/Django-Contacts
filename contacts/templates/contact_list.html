@@ -187,6 +187,7 @@
             }
             function handleAddToCampaign(campaign) {
                 const selectedContacts = [];
+                const selectedEmails = [];
                 const contactRows = document.querySelectorAll('.contact-row');
             
                 contactRows.forEach(row => {
@@ -213,6 +214,7 @@
             
                         if (!isEmpty) {
                             selectedContacts.push(contactDetails);
+                            selectedEmails.push(contactDetails.email);
                         } else {
                             console.log('Skipping contact with incomplete details:', contactDetails);
                         }
@@ -220,6 +222,7 @@
                 });
             
                 console.log('Selected Contacts:', selectedContacts); // Log the selected contacts
+                console.log('Selected Emails:', selectedEmails);
             
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                 if (selectedContacts.length > 0) {
@@ -232,6 +235,7 @@
                         },
                         body: JSON.stringify({
                             selected_leads: selectedContacts,
+                            selected_emails: selectedEmails,
                             campaign_name: campaign
                         })
                     })
