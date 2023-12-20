@@ -290,18 +290,20 @@ def campaign_page(request):
         'campaign_emails': campaign_emails,
         'distinct_campaigns': distinct_campaigns
     })
-
 @csrf_exempt
 def delete_selected_leads(request):
     if request.method == 'POST':
-        lead_ids = request.POST.getlist('lead_ids[]')  # Assuming 'lead_ids[]' is sent as an array from frontend
         try:
-            # Delete selected leads from the database
-            Campaign_Emails.objects.filter(id__in=lead_ids).delete()
+            data = json.loads(request.body)  # Load JSON data from request body
+
+            delete_list = data.get('delete_list')  # Retrieve list of emails for deletion
+            campaign_name = data.get('campaign_name')
+
+            # Delete selected leads from the database based on email
+            Campaign_Emails.objects.filter(email__in=delete_list).delete()
 
             # Now, also delete from Instantly AI
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
-            campaign_name = request.POST.get('campaign_name')
             campaign_id = get_campaign_id(api_key, campaign_name)
 
             if campaign_id:
@@ -309,7 +311,7 @@ def delete_selected_leads(request):
                     "api_key": "6efvz60989m4q3jnwvyhm2x7wa1c",
                     "campaign_id": campaign_id,
                     "delete_all_from_company": False,
-                    "delete_list": lead_ids
+                    "delete_list": delete_list  # Pass the list of emails to be deleted
                 }
 
                 url = "https://api.instantly.ai/api/v1/lead/delete"
@@ -319,7 +321,7 @@ def delete_selected_leads(request):
                 if response.status_code == 200:
                     return JsonResponse({'message': 'Leads deleted successfully from both the database and Instantly AI'})
                 else:
-                    # If deletion from Instantly AI fails, you might want to handle this scenario accordingly
+                    # If deletion from Instantly AI fails, handle this scenario accordingly
                     return JsonResponse({'error': 'Failed to delete leads from Instantly AI'}, status=response.status_code)
             else:
                 return JsonResponse({'error': 'Invalid campaign name'}, status=400)
@@ -328,6 +330,3 @@ def delete_selected_leads(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
-
-
-

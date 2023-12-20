@@ -10,7 +10,6 @@
 {% block content %}
     <form method="post" action="{% url 'delete_selected_leads' %}">
         {% csrf_token %}
-        <input type="hidden" id="selectedCampaign" name="campaign_name" value="">
         <button class="btn btn-danger float-right mt-3" id="deleteLeadsButton" type="submit">Delete Leads</button>
 
         <div class="ml-2">
@@ -138,9 +137,6 @@
                     const campaign = $(this).text();
                     filterCampaignTable(campaign);
 
-                    // Update the value of the hidden input field with the selected campaign name
-                $('#selectedCampaign').val(campaign);
-
                     // Close dropdown after selecting a campaign
                     $('[aria-labelledby="viewCampaignDropdown"]').removeClass('show');
                 });
@@ -193,34 +189,46 @@
 
             // Function to delete selected leads
             function deleteSelectedLeads() {
-                const selectedLeadIds = [];
+                const selectedEmails = [];
                 let selectedCampaign = '';
-            
+
                 $('#campaignEmailsTableBody input:checked').each(function() {
-                    selectedLeadIds.push($(this).val());
-                    selectedCampaign = $(this).closest('tr').attr('data-campaign'); // Retrieve the selected campaign name
+                    const email = $(this).closest('tr').find('td:nth-child(4)').text().trim();
+                    selectedEmails.push(email);
+
+                    selectedCampaign = $(this).closest('tr').find('td:nth-child(9)').text().trim();
+                    console.log(selectedCampaign);
+
                     $(this).closest('tr').remove(); // Remove the row from UI
                 });
-            
-                // Send an AJAX request to delete selected leads
-                $.ajax({
-                    type: 'POST',
-                    url: '{% url "delete_selected_leads" %}',
-                    data: {
-                        'lead_ids': selectedLeadIds,
-                        'campaign_name': selectedCampaign, // Include the selected campaign name in the data sent to the backend
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'
-                    },
-                    success: function(response) {
-                        // Handle success (optional)
-                        console.log('Selected leads deleted successfully');
-                        // Update pagination info if needed
-                    },
-                    error: function(error) {
-                        // Handle error (optional)
-                        console.error('Error deleting leads:', error);
-                    }
-                });
+
+                // Ask for confirmation before deleting
+                const confirmation = confirm('Are you sure you want to delete the selected leads?');
+                if (confirmation) {
+                    // Send an AJAX request to delete selected leads
+                    $.ajax({
+                        type: 'POST',
+                        url: '{% url "delete_selected_leads" %}',
+                        data: JSON.stringify({
+                            'delete_list': selectedEmails, // Include the list of selected emails for deletion
+                            'campaign_name': selectedCampaign,
+                            'csrfmiddlewaretoken': '{{ csrf_token }}'
+                        }),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            // Handle success
+                            alert('Selected leads deleted successfully');
+                            // Update pagination info
+                            showEntries(0, end);
+                        },
+                        error: function(error) {
+                            // Handle error
+                            console.error('Error deleting leads:', error);
+                        }
+                    });
+                } else {
+                    // User clicked cancel, do nothing or perform additional action
+                }
             }
         });
     </script>

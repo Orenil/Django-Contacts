@@ -242,8 +242,13 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Display success message using alert()
-                            alert(`Added contacts to ${campaign} successfully!`);
+                            // Add a message indicating that contacts are being added to the campaign
+                            alert(`Adding contacts to ${campaign}...`);
+
+                            setTimeout(() => {
+                                // Display success message after contacts have been added (simulated here)
+                                alert(`Added contacts to ${campaign} successfully!`);
+                            }, 2000); // Replace 2000 with the actual duration or remove if not needed
                         } else {
                             console.log('Failed to add contacts to the campaign.');
                             // Handle failure or show an error message if necessary
