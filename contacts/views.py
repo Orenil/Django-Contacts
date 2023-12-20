@@ -3,6 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
 from .models import Contact, Campaign_Emails
 from django.contrib.auth.forms import AuthenticationForm
@@ -193,14 +195,34 @@ def upload_to_campaign(api_key, campaign_id, selected_leads):
 
     return response.status_code if 'response' in locals() else None  # Return status code or None if no response
 
-def upload_to_campaign_emails(selected_emails, user_id, campaign_name):
+def upload_to_campaign_emails(selected_leads, user_id, campaign_name):
     leads_to_upload = []
 
-    # Prepare Campaign_Emails instances for bulk creation
-    for email in selected_emails:
-        leads_to_upload.append(Campaign_Emails(user_id=user_id, email=email, campaign_name=campaign_name))
+    for lead in selected_leads:
+        # Extracting various fields from the selected_leads data
+        email = lead.get('email', '')  # Default to empty string if email is missing
+        first_name = lead.get('first_name', '')
+        last_name = lead.get('last_name', '')
+        company = lead.get('company', '')
+        lead_type = lead.get('type', '')
+        location = lead.get('location', 'None')
+        title = lead.get('title', '')
+
+        # Create Campaign_Emails instances for bulk creation
+        leads_to_upload.append(Campaign_Emails(
+            user_id=user_id,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            company=company,
+            type=lead_type,
+            location=location,
+            title=title,
+            campaign_name=campaign_name
+        ))
 
     try:
+        # Bulk create Campaign_Emails instances
         Campaign_Emails.objects.bulk_create(leads_to_upload)
         logging.info("Leads uploaded successfully to campaign_emails model.")
         return True
@@ -229,11 +251,22 @@ def upload_to_campaign_view(request):
             # Attempt to upload to campaign to Instantly.AI
             upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
             
-            # Extract emails from selected_leads
-            selected_emails = [lead.get('email') for lead in selected_leads if 'email' in lead]
+            # Extract emails and other lead information from selected_leads
+            leads_info = []
+            for lead in selected_leads:
+                lead_info = {
+                    'email': lead.get('email', ''),
+                    'first_name': lead.get('first_name', ''),
+                    'last_name': lead.get('last_name', ''),
+                    'company': lead.get('company', ''),
+                    'type': lead.get('type', ''),
+                    'location': lead.get('location', 'None'),
+                    'title': lead.get('title', ''),
+                }
+                leads_info.append(lead_info)
 
-            # Attempt to upload emails to campaign_emails model using bulk_create
-            campaign_emails_upload_success = upload_to_campaign_emails(selected_emails, user_id, campaign_name)
+            # Attempt to upload lead information to campaign_emails model using bulk_create
+            campaign_emails_upload_success = upload_to_campaign_emails(leads_info, user_id, campaign_name)
 
             # Return a JSON response indicating the success/failure of the uploads
             if upload_result is not None and campaign_emails_upload_success:
@@ -247,6 +280,54 @@ def upload_to_campaign_view(request):
 
 @login_required
 def campaign_page(request):
-    campaign_emails = Campaign_Emails.objects.all()  # Fetch all campaign emails
+    # Fetch all campaign emails ordered by campaign_name
+    campaign_emails = Campaign_Emails.objects.order_by('campaign_name')
+
+    # Fetch distinct campaign names for filtering purposes
     distinct_campaigns = Campaign_Emails.objects.values_list('campaign_name', flat=True).distinct()
-    return render(request, 'campaign.html', {'campaign_emails': campaign_emails, 'distinct_campaigns': distinct_campaigns})
+
+    return render(request, 'campaign.html', {
+        'campaign_emails': campaign_emails,
+        'distinct_campaigns': distinct_campaigns
+    })
+
+@csrf_exempt
+def delete_selected_leads(request):
+    if request.method == 'POST':
+        lead_ids = request.POST.getlist('lead_ids[]')  # Assuming 'lead_ids[]' is sent as an array from frontend
+        try:
+            # Delete selected leads from the database
+            Campaign_Emails.objects.filter(id__in=lead_ids).delete()
+
+            # Now, also delete from Instantly AI
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+            campaign_name = request.POST.get('campaign_name')
+            campaign_id = get_campaign_id(api_key, campaign_name)
+
+            if campaign_id:
+                payload = {
+                    "api_key": "6efvz60989m4q3jnwvyhm2x7wa1c",
+                    "campaign_id": campaign_id,
+                    "delete_all_from_company": False,
+                    "delete_list": lead_ids
+                }
+
+                url = "https://api.instantly.ai/api/v1/lead/delete"
+                headers = {'Content-Type': 'application/json'}
+                response = requests.post(url, headers=headers, json=payload)
+
+                if response.status_code == 200:
+                    return JsonResponse({'message': 'Leads deleted successfully from both the database and Instantly AI'})
+                else:
+                    # If deletion from Instantly AI fails, you might want to handle this scenario accordingly
+                    return JsonResponse({'error': 'Failed to delete leads from Instantly AI'}, status=response.status_code)
+            else:
+                return JsonResponse({'error': 'Invalid campaign name'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+

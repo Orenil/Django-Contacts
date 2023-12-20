@@ -8,7 +8,7 @@ class ContactAdmin(admin.ModelAdmin):
 admin.site.register(Contact, ContactAdmin)
 
 
-class CampaignEmailsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'email', 'campaign_name')
+class Campaign_EmailsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'campaign_name')
 
-admin.site.register(Campaign_Emails, CampaignEmailsAdmin)
+admin.site.register(Campaign_Emails, Campaign_EmailsAdmin)

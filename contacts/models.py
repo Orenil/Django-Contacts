@@ -24,7 +24,13 @@ class SelectedContacts(models.Model):
 class Campaign_Emails(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     email = models.EmailField()
-    campaign_name = models.CharField(max_length=255, default='Null')
+    first_name = models.CharField(max_length=100, default='')
+    last_name = models.CharField(max_length=100, default='')
+    company = models.CharField(max_length=100, default='')
+    type = models.CharField(max_length=100, default='')
+    location = models.CharField(max_length=100, default='None')  
+    title = models.CharField(max_length=100, default='')
+    campaign_name = models.CharField(max_length=255, default='')
     
     def __str__(self):
         return self.email
