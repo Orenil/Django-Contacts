@@ -21,6 +21,7 @@ class SelectedContacts(models.Model):
     contact_ids = models.TextField()  # Store contact IDs as a comma-separated list or JSON string
     created_at = models.DateTimeField(auto_now_add=True)
 
+#Create Campaign_Emails:
 class Campaign_Emails(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     email = models.EmailField()
@@ -34,3 +35,10 @@ class Campaign_Emails(models.Model):
     
     def __str__(self):
         return self.email
+    
+#Create Campaign:
+class Campaign(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    def __str__(self):
+        return self.name

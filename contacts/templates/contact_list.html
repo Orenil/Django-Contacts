@@ -36,8 +36,9 @@
                     Add to Campaign
                 </button>
                 <div class="dropdown-menu" aria-labelledby="addCampaignDropdown">
-                    <a class="dropdown-item" id="Django Campaign">Django Campaign</a>
-                    <a class="dropdown-item" id="Django Campaign 2">Django Campaign 2</a>
+                    {% for campaign_name in campaign_names %}
+                        <a class="dropdown-item" id="{{ campaign_name }}">{{ campaign_name }}</a>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -242,13 +243,10 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // Add a message indicating that contacts are being added to the campaign
-                            alert(`Adding contacts to ${campaign}...`);
-
                             setTimeout(() => {
                                 // Display success message after contacts have been added (simulated here)
                                 alert(`Added contacts to ${campaign} successfully!`);
-                            }, 2000); // Replace 2000 with the actual duration or remove if not needed
+                            }, 2000); 
                         } else {
                             console.log('Failed to add contacts to the campaign.');
                             // Handle failure or show an error message if necessary
@@ -270,20 +268,49 @@
                 return textContent;
             }
             
-            // Add click event listeners for dropdown items (Django Campaign and Django Campaign 2)
+            // Add click event listeners for dropdown items
             document.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', function(event) {
                     event.preventDefault();
                     const campaign = this.getAttribute('id');
-            
-                    // Check if the clicked item is Django Campaign or Django Campaign 2
-                    if (campaign === 'Django Campaign' || campaign === 'Django Campaign 2') {
-                        handleAddToCampaign(campaign);
-                    } else {
-                        console.log('Invalid campaign selected.');
-                    }
+                
+                    // Handle adding contacts to the selected campaign
+                    alert(`Adding contacts to ${campaign}...`);
+                    handleAddToCampaign(campaign);
                 });
             });
+
+            // Function to dynamically generate dropdown items
+            function populateCampaignDropdown(campaignNames) {
+                const dropdownMenu = document.querySelector('.dropdown-menu');
+                dropdownMenu.innerHTML = ''; // Clear existing items
+
+                campaignNames.forEach(name => {
+                    const newDropdownItem = document.createElement('a');
+                    newDropdownItem.classList.add('dropdown-item');
+                    newDropdownItem.textContent = name; // Set the name as text content (no need to set ID)
+                    dropdownMenu.appendChild(newDropdownItem);
+
+                    // Add click event listener to handle adding contacts to the selected campaign
+                    newDropdownItem.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const campaign = name; // Use the clicked campaign name
+                        alert(`Adding contacts to ${campaign}...`);
+                        handleAddToCampaign(campaign); // Call the function to add contacts to the campaign
+                    });
+                });
+            }
+
+            // Modify this fetch call according to your backend endpoint
+            fetch('/get_campaign_names/')
+                .then(response => response.json())
+                .then(data => {
+                    const campaignNames = data.campaigns; // Assuming the campaign names are returned as an array in 'data.campaigns'
+                    populateCampaignDropdown(campaignNames);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
             
             // Additional functionality for Add to Campaign dropdown
             const addCampaignDropdown = document.getElementById('addCampaignDropdown');

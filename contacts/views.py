@@ -6,12 +6,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
-from .models import Contact, Campaign_Emails
+from .models import Contact, Campaign_Emails, Campaign
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
 from django.db.models import Count
+from django.contrib.auth.models import User
 from .forms import UserRegisterForm
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNameFromContactId, getCompanyNameFromContactId, getTypeFromContactId, getTitleFromContactId
 import csv
@@ -53,6 +55,12 @@ def home(request):
 
 @login_required
 def contact_list(request):
+    # Filter campaigns associated with the logged-in user
+    user_campaigns = Campaign.objects.filter(user=request.user)
+
+    # Extract campaign names as a list
+    campaign_names = list(user_campaigns.values_list('name', flat=True))
+
     distinct_types = Contact.objects.values_list('type', flat=True).distinct()
     distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
     distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
@@ -65,10 +73,20 @@ def contact_list(request):
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
+        'campaign_names': campaign_names,  
     })
 
+@login_required
+def get_campaign_names(request):
+    if request.method == 'GET':
+        user_campaigns = Campaign.objects.filter(user=request.user)
+        campaign_names = list(user_campaigns.values_list('name', flat=True))
+        return JsonResponse({'campaigns': campaign_names})
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 def upload_csv(request):
-    if request.method == 'POST' and request.FILES.get('csv_file'):
+    if request.method == 'POST' and request.FILES.get('csv_file'):  
         csv_file = request.FILES['csv_file']
 
         if not csv_file.name.endswith('.csv'):
@@ -196,33 +214,26 @@ def upload_to_campaign(api_key, campaign_id, selected_leads):
     return response.status_code if 'response' in locals() else None  # Return status code or None if no response
 
 def upload_to_campaign_emails(selected_leads, user_id, campaign_name):
+    user = User.objects.get(id=user_id)  # Retrieve the user based on the provided ID
+
     leads_to_upload = []
 
     for lead in selected_leads:
-        # Extracting various fields from the selected_leads data
-        email = lead.get('email', '')  # Default to empty string if email is missing
-        first_name = lead.get('first_name', '')
-        last_name = lead.get('last_name', '')
-        company = lead.get('company', '')
-        lead_type = lead.get('type', '')
-        location = lead.get('location', 'None')
-        title = lead.get('title', '')
-
-        # Create Campaign_Emails instances for bulk creation
-        leads_to_upload.append(Campaign_Emails(
-            user_id=user_id,
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-            company=company,
-            type=lead_type,
-            location=location,
-            title=title,
-            campaign_name=campaign_name
-        ))
+        email = lead.get('email', '')
+        if not Campaign_Emails.objects.filter(email=email, user=user).exists():
+            leads_to_upload.append(Campaign_Emails(
+                user=user,  # Associate the contact with the logged-in user
+                email=email,
+                first_name=lead.get('first_name', ''),
+                last_name=lead.get('last_name', ''),
+                company=lead.get('company', ''),
+                type=lead.get('type', ''),
+                location=lead.get('location', 'None'),
+                title=lead.get('title', ''),
+                campaign_name=campaign_name
+            ))
 
     try:
-        # Bulk create Campaign_Emails instances
         Campaign_Emails.objects.bulk_create(leads_to_upload)
         logging.info("Leads uploaded successfully to campaign_emails model.")
         return True
@@ -235,61 +246,49 @@ def upload_to_campaign_emails(selected_leads, user_id, campaign_name):
 def upload_to_campaign_view(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)  # Load JSON data from request body
-
+            data = json.loads(request.body)
             selected_leads = data.get('selected_leads')
             campaign_name = data.get('campaign_name')
             user_id = request.user.id 
 
-            # Validate if selected_leads and campaign_name exist in the request
             if not selected_leads or not campaign_name:
                 return JsonResponse({'error': 'Incomplete data received'}, status=400)
+
+            # Filter out duplicates from selected leads based on email addresses
+            selected_leads = [dict(t) for t in {tuple(d.items()) for d in selected_leads}]
 
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
             campaign_id = get_campaign_id(api_key, campaign_name)
 
-            # Attempt to upload to campaign to Instantly.AI
             upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
             
-            # Extract emails and other lead information from selected_leads
-            leads_info = []
-            for lead in selected_leads:
-                lead_info = {
-                    'email': lead.get('email', ''),
-                    'first_name': lead.get('first_name', ''),
-                    'last_name': lead.get('last_name', ''),
-                    'company': lead.get('company', ''),
-                    'type': lead.get('type', ''),
-                    'location': lead.get('location', 'None'),
-                    'title': lead.get('title', ''),
-                }
-                leads_info.append(lead_info)
+            # Attempt to upload lead information to campaign_emails model without duplicates
+            campaign_emails_upload_success = upload_to_campaign_emails(selected_leads, user_id, campaign_name)
 
-            # Attempt to upload lead information to campaign_emails model using bulk_create
-            campaign_emails_upload_success = upload_to_campaign_emails(leads_info, user_id, campaign_name)
-
-            # Return a JSON response indicating the success/failure of the uploads
             if upload_result is not None and campaign_emails_upload_success:
                 return JsonResponse({'success': True, 'instantly_upload_result': upload_result})
             else:
                 return JsonResponse({'error': 'Failed to upload leads'}, status=500)
         
         except Exception as e:
-            # Log the error for debugging purposes
             return HttpResponseServerError('Error occurred while processing the request.')
 
 @login_required
 def campaign_page(request):
-    # Fetch all campaign emails ordered by campaign_name
-    campaign_emails = Campaign_Emails.objects.order_by('campaign_name')
+    # Fetch campaigns associated with the logged-in user only
+    user_campaigns = Campaign.objects.filter(user=request.user)
+
+    # Fetch campaign emails for the campaigns associated with the logged-in user
+    campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
 
     # Fetch distinct campaign names for filtering purposes
-    distinct_campaigns = Campaign_Emails.objects.values_list('campaign_name', flat=True).distinct()
+    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
 
     return render(request, 'campaign.html', {
         'campaign_emails': campaign_emails,
         'distinct_campaigns': distinct_campaigns
     })
+    
 @csrf_exempt
 def delete_selected_leads(request):
     if request.method == 'POST':
@@ -298,9 +297,11 @@ def delete_selected_leads(request):
 
             delete_list = data.get('delete_list')  # Retrieve list of emails for deletion
             campaign_name = data.get('campaign_name')
+            user_id = request.user.id  # Retrieve the logged-in user ID
+            user = User.objects.get(id=user_id)  # Retrieve the user based on the provided ID
 
-            # Delete selected leads from the database based on email
-            Campaign_Emails.objects.filter(email__in=delete_list).delete()
+            # Delete selected leads associated with the logged-in user from the database based on email
+            Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
 
             # Now, also delete from Instantly AI
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
@@ -330,3 +331,5 @@ def delete_selected_leads(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+
