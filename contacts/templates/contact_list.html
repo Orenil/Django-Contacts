@@ -122,6 +122,7 @@
 
     <div class="text-center">
         <button id="viewMoreButton" class="btn btn-primary">Load More</button>
+        <button id="previousPageButton" style="display: none;">Previous Page</button>
     </div>
 
     <script>
@@ -141,21 +142,69 @@
             });
 
             const contacts = document.querySelectorAll(".contact-row");
-            for (let i = 10; i < contacts.length; i++) {
-                contacts[i].style.display = "none";
+            const viewMoreButton = document.getElementById("viewMoreButton");
+            const contactsPerPage = 6;
+            let currentPage = 1;
+
+            // Hide all contacts initially
+            contacts.forEach((contact, index) => {
+                if (index >= contactsPerPage) {
+                    contact.style.display = "none";
+                }
+            });
+
+            function showContacts(pageNumber) {
+                const startIndex = (pageNumber - 1) * contactsPerPage;
+                const endIndex = startIndex + contactsPerPage;
+
+                contacts.forEach((contact, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        contact.style.display = ""; // Display contacts within the current page range
+                    } else {
+                        contact.style.display = "none"; // Hide contacts outside the current page range
+                    }
+                });
             }
 
-            const viewMoreButton = document.getElementById("viewMoreButton");
-            viewMoreButton.addEventListener("click", function() {
-                for (let i = 10; i < contacts.length; i++) {
-                    if (contacts[i].style.display === "none") {
-                        contacts[i].style.display = "";
-                    } else {
-                        break;
+            const previousPageButton = document.getElementById("previousPageButton");
+
+            // Event listener for the "Previous Page" button
+            previousPageButton.addEventListener("click", function() {
+                if (currentPage > 1) {
+                    currentPage--;
+
+                    showContacts(currentPage);
+
+                    viewMoreButton.style.display = "block"; // Show the "Load More" button
+                    if (currentPage === 1) {
+                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
                     }
                 }
             });
 
+            // Modify the 'viewMoreButton' event listener to handle pagination after applying filters
+            viewMoreButton.addEventListener("click", function() {
+                const totalContacts = contacts.length; // Assuming 'contacts' is the list of filtered contacts
+                const totalPages = Math.ceil(totalContacts / contactsPerPage);
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+
+                    showContacts(currentPage);
+
+                    if (currentPage === totalPages) {
+                        viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
+                    }
+                } else {
+                    viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
+                }
+
+                previousPageButton.style.display = 'block'; // Show the "Previous Page" button
+            });
+
+            // Show contacts for the initial page (page 1)
+            showContacts(currentPage);
+        
             const selectAllCheckbox = document.getElementById("selectAllCheckbox");
             const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
 
@@ -163,6 +212,67 @@
                 contactCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCheckbox.checked;
                 });
+            });
+
+            // Function to apply filters based on selected values
+            function applyFilters() {
+                const selectedType = $('#typeFilter').val();
+                const selectedCompany = $('#companyFilter').val();
+                const selectedLocation = $('#locationFilter').val();
+                const selectedLevel = $('#levelFilter').val(); // Get selected level value
+
+                let count = 0; // Counter for displayed rows
+                $('#contactTableBody tr').each(function() {
+                    if (count < 6) {
+                        const type = $(this).find('td:nth-child(8)').text().trim();
+                        const company = $(this).find('td:nth-child(7)').text().trim();
+                        const location = $(this).find('td:nth-child(9)').text().trim();
+                        const level = $(this).find('td:nth-child(10)').text().trim(); // Get level from table
+
+                        // Show/hide rows based on filter criteria
+                        if (
+                            (selectedType === '' || type === selectedType) &&
+                            (selectedCompany === '' || company === selectedCompany) &&
+                            (selectedLocation === '' || location === selectedLocation) &&
+                            (selectedLevel === '' || level === selectedLevel) // Check level filter
+                        ) {
+                            $(this).show();
+                            count++;
+                        } else {
+                            $(this).hide();
+                        }
+                    } else {
+                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
+                    }
+                });
+
+                // Check if more rows exist with the selected filter value(s)
+                const filteredRowsWithFilter = $('#contactTableBody tr').filter(function() {
+                    const type = $(this).find('td:nth-child(7)').text().trim();
+                    const company = $(this).find('td:nth-child(5)').text().trim();
+                    const location = $(this).find('td:nth-child(8)').text().trim();
+                    const level = $(this).find('td:nth-child(9)').text().trim();
+
+                    return (
+                        (selectedType === '' || type === selectedType) &&
+                        (selectedCompany === '' || company === selectedCompany) &&
+                        (selectedLocation === '' || location === selectedLocation) &&
+                        (selectedLevel === '' || level === selectedLevel)
+                    );
+                }).length;
+
+                // Show Load More button if more rows with the selected filter value(s) are available
+                if (filteredRowsWithFilter > 6) {
+                    $('#viewMoreButton').show();
+                } else {
+                    $('#viewMoreButton').hide();
+                }
+            }
+
+            // Apply Filters button
+            $('#applyFilterButton').on('click', function(event) {
+                event.preventDefault();
+                applyFilters(); // Apply filters when the 'Apply Filters' button is clicked
             });
 
             function retrieveStoredContacts() {
@@ -331,53 +441,6 @@
                         }
                     }
                 }
-            });
-
-            const applyFilterButton = document.getElementById("applyFilterButton");
-            applyFilterButton.addEventListener("click", function() {
-                const typeFilter = document.getElementById("typeFilter").value;
-                const companyFilter = document.getElementById("companyFilter").value;
-                const locationFilter = document.getElementById("locationFilter").value;
-                const levelFilter = document.getElementById("levelFilter").value;
-
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-                fetch('/contact/filter/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: `csrfmiddlewaretoken=${csrfToken}&type=${typeFilter}&company=${companyFilter}&location=${locationFilter}&level=${levelFilter}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const contactTableBody = document.getElementById("contactTableBody");
-                    contactTableBody.innerHTML = "";
-
-                    if (data.contacts.length === 0) {
-                        contactTableBody.innerHTML = '<tr><td colspan="8">No contacts found.</td></tr>';
-                    } else {
-                        data.contacts.forEach(contact => {
-                            contactTableBody.innerHTML += `
-                                <tr class="contact-row" data-id="${contact.id}">
-                                    <td>
-                                        <input type="checkbox" class="contact-checkbox" value="${contact.id}">
-                                    </td>
-                                    <td>${contact.first_name} ${contact.last_name}</td>
-                                    <td>${contact.email}</td>
-                                    <td>${contact.phone}</td>
-                                    <td>${contact.company}</td>
-                                    <td>${contact.type}</td>
-                                    <td>${contact.location}</td>
-                                    <td>${contact.level}</td>
-                                </tr>`;
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
             });
         });
     </script>

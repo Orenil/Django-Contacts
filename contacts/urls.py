@@ -16,6 +16,7 @@ urlpatterns = [
     path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
     path('upload_to_campaign_emails/', views.upload_to_campaign_emails, name='upload_to_campaign_emails'),
     path('campaign/', views.campaign_page, name='campaign_page'),
+    path('filter_leads/', views.filter_leads, name='filter_leads'),
     path('delete_selected_leads/', views.delete_selected_leads, name='delete_selected_leads'),
 ]
 

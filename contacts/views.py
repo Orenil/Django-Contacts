@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Contact, Campaign_Emails, Campaign
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
@@ -101,12 +102,16 @@ def upload_csv(request):
                 for row in csv_data:
                     row_count += 1
                     if len(row) == len(headers):  # Validate row against headers
-                        name, email, phone, title, company = row
+                        first_name, last_name, email, phone, title, company, type, location, level = row
                         existing_contact = Contact.objects.filter(email=email).first()
                         if existing_contact:
                             messages.warning(request, f"Skipped row at index {row_count}: {row}. Contact with email '{email}' already exists.")
                         else:
-                            Contact.objects.create(name=name, email=email, phone=phone, title=title, company=company)
+                            Contact.objects.create(
+                                first_name=first_name, last_name=last_name, email=email, phone=phone,
+                                title=title, company=company, type=type,
+                                location=location, level=level
+                            )
                     else:
                         messages.warning(request, f"Skipped row at index {row_count}: {row}. Unexpected number of values.")
 
@@ -115,18 +120,22 @@ def upload_csv(request):
                 messages.error(request, f"Error uploading contacts: {e}")
     return render(request, 'upload_csv.html')
 
-
 @csrf_exempt
 def filter_contacts(request):
     if request.method == 'POST':
+        # Get filter parameters from the frontend
         type_filter = request.POST.get('type')
         company_filter = request.POST.get('company')
         location_filter = request.POST.get('location')
         level_filter = request.POST.get('level')
+        page_number = request.POST.get('page')  # Get the requested page number
 
-        # Filter contacts based on received parameters
-        filtered_contacts = Contact.objects.all()
+        # Retrieve all contacts
+        all_contacts = Contact.objects.all()
 
+        # Apply filters to the Contact queryset
+        filtered_contacts = all_contacts  # Start with all contacts
+        
         if type_filter:
             filtered_contacts = filtered_contacts.filter(type=type_filter)
         if company_filter:
@@ -136,10 +145,29 @@ def filter_contacts(request):
         if level_filter:
             filtered_contacts = filtered_contacts.filter(level=level_filter)
 
-        # Prepare filtered contacts data to send back as JSON
-        contacts_data = list(filtered_contacts.values())  # Convert QuerySet to list of dictionaries
+        # Pagination logic
+        contacts_per_page = 6  # Set the number of contacts per page
 
-        return JsonResponse({'contacts': contacts_data}, status=200)
+        paginator = Paginator(filtered_contacts, contacts_per_page)
+
+        try:
+            contacts_page = paginator.page(page_number)
+        except PageNotAnInteger:
+            # If page is not an integer, return the first page
+            contacts_page = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g., 9999), return the last page of results
+            contacts_page = paginator.page(paginator.num_pages)
+
+        # Prepare paginated emails data to send back as JSON
+        contacts_data = list(contacts_page.object_list.values())  # Convert QuerySet to list of dictionaries
+
+        return JsonResponse({
+            'contacts': contacts_data,
+            'total_pages': paginator.num_pages,
+            'has_next': contacts_page.has_next(),
+            'has_previous': contacts_page.has_previous(),
+        }, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
@@ -282,13 +310,64 @@ def campaign_page(request):
     campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
 
     # Fetch distinct campaign names for filtering purposes
-    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
+    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct() 
+    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
+    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
+    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
 
     return render(request, 'campaign.html', {
         'campaign_emails': campaign_emails,
-        'distinct_campaigns': distinct_campaigns
+        'distinct_campaigns': distinct_campaigns,
+        'distinct_types': distinct_types,
+        'distinct_companies': distinct_companies,
+        'distinct_locations': distinct_locations
     })
-    
+
+@csrf_exempt
+def filter_leads(request):
+    if request.method == 'POST':
+        type_filter = request.POST.get('type')
+        company_filter = request.POST.get('company')
+        location_filter = request.POST.get('location')
+        page_number = request.POST.get('page')  # Get the requested page number
+
+        # Filter campaign emails based on received parameters
+        filtered_emails = Campaign_Emails.objects.all()
+
+        if type_filter:
+            filtered_emails = filtered_emails.filter(type=type_filter)
+        if company_filter:
+            filtered_emails = filtered_emails.filter(company=company_filter)
+        if location_filter:
+            filtered_emails = filtered_emails.filter(location=location_filter)
+
+        # Pagination
+        emails_per_page = 6  # Set the number of emails per page
+
+        paginator = Paginator(filtered_emails, emails_per_page)
+
+        try:
+            emails_page = paginator.page(page_number)
+        except PageNotAnInteger:
+            # If page is not an integer, return the first page
+            emails_page = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g., 9999), return the last page of results
+            emails_page = paginator.page(paginator.num_pages)
+
+        # Prepare paginated emails data to send back as JSON
+        emails_data = list(emails_page.object_list.values())  # Convert QuerySet to list of dictionaries
+
+        return JsonResponse({
+            'emails': emails_data,
+            'total_emails': paginator.count,
+            'total_pages': paginator.num_pages,
+            'has_next': emails_page.has_next(),
+            'has_previous': emails_page.has_previous(),
+        }, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 @csrf_exempt
 def delete_selected_leads(request):
     if request.method == 'POST':
