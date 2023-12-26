@@ -27,6 +27,28 @@
                     </div>
                 </div>
                 <button class="btn btn-info ml-3" id="viewAllButton">View All Campaigns</button>
+                <div class="dropdown" style="margin-left: 10px;"> 
+                    <button class="btn btn-success dropdown-toggle" type="button" id="launchCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Launch Campaign
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="launchCampaignDropdown">
+                        <!-- Dynamically populated campaign names -->
+                        {% for campaign in distinct_campaigns %}
+                            <a class="dropdown-item launch-campaign" href="#">{{ campaign }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="dropdown" style="margin-left: 10px;"> 
+                    <button class="btn btn-warning dropdown-toggle" type="button" id="pauseCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Pause Campaign
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="pauseCampaignDropdown">
+                        <!-- Dynamically populated campaign names -->
+                        {% for campaign in distinct_campaigns %}
+                            <a class="dropdown-item pause-campaign" href="#">{{ campaign }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
             <!-- Filter Menu -->
@@ -179,24 +201,50 @@
             
             function initEventListeners() {
 
+                function showLimitedItemsInViewCampaignDropdown() {
+                    const dropdownItems = $('[aria-labelledby="viewCampaignDropdown"] .view-campaign');
+                    const itemsToShow = 6;
+            
+                    dropdownItems.each(function(index) {
+                        if (index < itemsToShow) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+            
+                    // Show/hide Load More button based on the number of items displayed
+                    const visibleItems = dropdownItems.filter(':visible').length;
+                    if (visibleItems <= itemsToShow) {
+                        $('#loadMoreButton').hide();
+                    } else {
+                        $('#loadMoreButton').show();
+                    }
+                }
+            
+                // Event listener for the dropdown to toggle the visibility of items
                 $('#viewCampaignDropdown').on('click', function(event) {
                     event.preventDefault();
                     const campaignMenu = $('[aria-labelledby="viewCampaignDropdown"]');
                     if (!$(event.target).hasClass('view-campaign')) {
                         campaignMenu.toggleClass('show');
+                        showLimitedItemsInViewCampaignDropdown();
                     }
                 });
-
+            
                 // Event listener for clicking on individual campaigns in dropdown
                 $('.view-campaign').on('click', function(event) {
                     event.preventDefault();
                     const campaign = $(this).text();
                     filterCampaignTable(campaign);
-
+            
                     // Close dropdown after selecting a campaign
                     $('[aria-labelledby="viewCampaignDropdown"]').removeClass('show');
+            
+                    // Update the visibility of items and "Load More" button after selecting a campaign
+                    showLimitedItemsInViewCampaignDropdown();
                 });
-
+            
                 // Close dropdown if clicked outside of it or on a campaign
                 $(document).on('click', function(event) {
                     const dropdownMenu = $('[aria-labelledby="viewCampaignDropdown"]');
@@ -204,12 +252,12 @@
                         dropdownMenu.removeClass('show');
                     }
                 });
-
+            
                 $('#viewAllButton').on('click', function(event) {
                     event.preventDefault();
                     viewAllCampaigns();
                 });
-
+            
                 $('#deleteLeadsButton').on('click', function(event) {
                     event.preventDefault();
                     deleteSelectedLeads();
@@ -235,9 +283,27 @@
 
             // Function to display all campaigns in the table
             function viewAllCampaigns() {
-                $('#campaignEmailsTableBody tr').show();
-
-                // Reset button text to default
+                const campaignTableBody = $('#campaignEmailsTableBody');
+                const maxItems = 6;
+                const tableRows = campaignTableBody.find('tr');
+            
+                // Show the first six rows and hide the rest
+                tableRows.hide();
+            
+                for (let i = 0; i < maxItems; i++) {
+                    $(tableRows[i]).show(); // Show the first six rows
+                }
+            
+                const totalHiddenItems = tableRows.length - maxItems;
+            
+                // Show "Load More" button if there are more items to display
+                if (totalHiddenItems > 0) {
+                    $('#loadMoreButton').show();
+                } else {
+                    $('#loadMoreButton').hide();
+                }
+            
+                // Reset dropdown text to default
                 $('#viewCampaignDropdown').text('View Specific Campaign');
             }
 
@@ -296,6 +362,118 @@
                 event.preventDefault();
                 applyFilters(); // Apply filters when the 'Apply Filters' button is clicked
             });
+
+            $(document).ready(function() {
+                // Event listener for the Launch Campaign dropdown toggle
+                $('#launchCampaignDropdown').on('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation(); // Prevent the click event from propagating to the document body
+                    const campaignMenu = $('[aria-labelledby="launchCampaignDropdown"]');
+                    campaignMenu.toggleClass('show');
+                });
+            
+                // Click event on the document body to hide the dropdown when clicking outside
+                $(document.body).on('click', function(event) {
+                    const campaignDropdown = $('#launchCampaignDropdown');
+                    if (!campaignDropdown.is(event.target) && campaignDropdown.has(event.target).length === 0) {
+                        $('[aria-labelledby="launchCampaignDropdown"]').removeClass('show');
+                    }
+                });
+            
+                // Event listener for launching a campaign from the dropdown
+                $('.launch-campaign').click(function(event) {
+                    event.preventDefault();
+                    const selectedCampaign = $(this).text().trim();
+                    launchCampaign(selectedCampaign);
+                });
+            });
+            
+            // Function to launch campaign
+            function launchCampaign(selectedCampaign) {
+                console.log('Selected campaign:', selectedCampaign);
+                if (selectedCampaign) {
+                    const confirmation = confirm('Are you sure you want to launch the campaign: ' + selectedCampaign + '?');
+                    if (confirmation) {
+                        // Send an AJAX request to launch the campaign
+                        $.ajax({
+                            type: 'POST',
+                            url: '{% url "launch_campaign" %}', // Replace with your Django URL for launching campaigns
+                            data: JSON.stringify({
+                                'campaign_name': selectedCampaign, // Include the selected campaign name
+                                'csrfmiddlewaretoken': '{{ csrf_token }}'
+                            }),
+                            contentType: 'application/json',
+                            success: function(response) {
+                                // Handle success
+                                alert('Campaign launched successfully');
+                                // Additional actions after successful launch
+                            },
+                            error: function(error) {
+                                // Handle error
+                                console.error('Error launching campaign:', error);
+                            }
+                        });
+                    } else {
+                        // User clicked cancel, do nothing or perform additional action
+                    }
+                }
+            }
+
+            $(document).ready(function() {
+                // Event listener for the Pause Campaign dropdown toggle
+                $('#pauseCampaignDropdown').on('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation(); // Prevent the click event from propagating to the document body
+                    const campaignMenu = $('[aria-labelledby="pauseCampaignDropdown"]');
+                    campaignMenu.toggleClass('show');
+                });
+            
+                // Click event on the document body to hide the dropdown when clicking outside
+                $(document.body).on('click', function(event) {
+                    const campaignDropdown = $('#pauseCampaignDropdown');
+                    if (!campaignDropdown.is(event.target) && campaignDropdown.has(event.target).length === 0) {
+                        $('[aria-labelledby="pauseCampaignDropdown"]').removeClass('show');
+                    }
+                });
+            
+                // Event listener for pausing a campaign from the dropdown
+                $('.pause-campaign').click(function(event) {
+                    event.preventDefault();
+                    const selectedCampaign = $(this).text().trim();
+                    pauseCampaign(selectedCampaign);
+                });
+            });
+            
+            // Function to pause campaign
+            function pauseCampaign(selectedCampaign) {
+                console.log('Selected campaign to pause:', selectedCampaign);
+                if (selectedCampaign) {
+                    const confirmation = confirm('Are you sure you want to pause the campaign: ' + selectedCampaign + '?');
+                    if (confirmation) {
+                        // Send an AJAX request to pause the campaign
+                        $.ajax({
+                            type: 'POST',
+                            url: '{% url "pause_campaign" %}', // Replace with your Django URL for pausing campaigns
+                            data: JSON.stringify({
+                                'campaign_name': selectedCampaign, // Include the selected campaign name
+                                'csrfmiddlewaretoken': '{{ csrf_token }}'
+                            }),
+                            contentType: 'application/json',
+                            success: function(response) {
+                                // Handle success
+                                alert('Campaign paused successfully');
+                                // Additional actions after successful pause
+                            },
+                            error: function(error) {
+                                // Handle error
+                                console.error('Error pausing campaign:', error);
+                            }
+                        });
+                    } else {
+                        // User clicked cancel, do nothing or perform additional action
+                    }
+                }
+            }
 
             // Function to delete selected leads
             function deleteSelectedLeads() {

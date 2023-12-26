@@ -369,6 +369,7 @@ def filter_leads(request):
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @csrf_exempt
+@login_required
 def delete_selected_leads(request):
     if request.method == 'POST':
         try:
@@ -410,5 +411,84 @@ def delete_selected_leads(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
-    
 
+
+@csrf_exempt
+@login_required
+def launch_campaign(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Load JSON data from request body
+
+            campaign_name = data.get('campaign_name')
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c' 
+
+            if campaign_name and api_key:
+                user = request.user
+                campaign_id = get_campaign_id(api_key, campaign_name)
+
+                if campaign_id:
+                    url = "https://api.instantly.ai/api/v1/campaign/launch"
+
+                    payload = json.dumps({
+                        "api_key": api_key,
+                        "campaign_id": campaign_id
+                    })
+
+                    headers = {'Content-Type': 'application/json'}
+
+                    response = requests.post(url, headers=headers, data=payload)
+
+                    if response.status_code == 200:
+                        return JsonResponse({'message': 'Campaign launched successfully'})
+                    else:
+                        return JsonResponse({'error': 'Failed to launch campaign'}, status=response.status_code)
+                else:
+                    return JsonResponse({'error': 'Campaign not found'}, status=404)
+            else:
+                return JsonResponse({'error': 'Missing campaign name or API key'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+@csrf_exempt
+@login_required
+def pause_campaign(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Load JSON data from request body
+
+            campaign_name = data.get('campaign_name')
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+
+            if campaign_name and api_key:
+                user = request.user
+                campaign_id = get_campaign_id(api_key, campaign_name)
+
+                if campaign_id:
+                    url = "https://api.instantly.ai/api/v1/campaign/pause"
+
+                    payload = json.dumps({
+                        "api_key": api_key,
+                        "campaign_id": campaign_id
+                    })
+
+                    headers = {'Content-Type': 'application/json'}
+
+                    response = requests.post(url, headers=headers, data=payload)
+
+                    if response.status_code == 200:
+                        return JsonResponse({'message': 'Campaign paused successfully'})
+                    else:
+                        return JsonResponse({'error': 'Failed to pause campaign'}, status=response.status_code)
+                else:
+                    return JsonResponse({'error': 'Campaign not found'}, status=404)
+            else:
+                return JsonResponse({'error': 'Missing campaign name or API key'}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
