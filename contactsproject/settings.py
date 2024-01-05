@@ -20,12 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ylpkqdd#b*la*$yggg6#0h#xbetta#&-&32_09)kem*^1l__s7'
+# SECRET_KEY = 'django-insecure-ylpkqdd#b*la*$yggg6#0h#xbetta#&-&32_09)kem*^1l__s7'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com']
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or another session engine of your choice
 
@@ -35,6 +36,7 @@ SESSION_COOKIE_NAME = 'superuser_sessionid'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Application definition
+
 
 INSTALLED_APPS = [
     'contacts',
