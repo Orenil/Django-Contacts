@@ -29,8 +29,8 @@
   <br />
   <form method="POST" id="csv-form" enctype="multipart/form-data">
     {% csrf_token %}
-    <label for="csvfile">Select a CSV file:</label>
-    <input type="file" id="csvfile" name="csvfile" />
+    <label for="csv_file">Select a CSV file:</label>
+    <input type="file" id="csvfile" name="csv_file" />
     <br /><br />
     <button class="uploadBtn" id="submit" disabled>Upload CSV</button>
     <button
