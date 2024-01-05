@@ -41,6 +41,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 INSTALLED_APPS = [
     'contacts',
+    'import_export',
     'crispy_forms',
     'django.contrib.admin',
     'django.contrib.auth',
