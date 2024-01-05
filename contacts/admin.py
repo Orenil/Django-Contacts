@@ -27,7 +27,7 @@ class ContactAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         if request.method == "POST":
             create_new_contacts = []
             # capture payload from request
-            csv_file = json.loads(request.POST.get("file_name"))
+            csv_file = json.loads(request.POST.get("contacts"))
             reader = json.loads(request.POST.get("rows"))
             column_headers = json.loads(request.POST.get("csv_headers"))
             util_obj = ImportUtils(column_headers)
@@ -101,7 +101,7 @@ class ContactAdmin(ImportExportModelAdmin, admin.ModelAdmin):
                    "description": "",
                    "headers": ["First Name", "Last Name", "Email", "Company", "Title"],
                    "endpoint": "/admin/contacts/contact/export/",
-                   "fileName": "contacts_contact"}
+                   "fileName": "contacts"}
         return render(
             request, "admin/export_contacts_contact.html", context
         )
