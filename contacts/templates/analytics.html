@@ -1,0 +1,383 @@
+<!-- analytics.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Analytics</title>
+{% endblock %}
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+{% block content %}
+    <style>
+        /* CSS style for centering text in table cells and headers */
+        #campaignAnalyticsTable th,
+        #campaignAnalyticsTable td {
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
+
+    <form method="post" action="{% url 'get_campaign_summary' %}">
+        {% csrf_token %}
+        <div class="ml-2">
+            <!-- Form for selecting a campaign -->
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="viewAnalyticsDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        View Specific Analytics
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="viewAnalyticsDropdown">
+                        <!-- Dynamically populated campaign names -->
+                        {% for campaign in distinct_campaigns %}
+                            <a class="dropdown-item view-analytics" href="#">{{ campaign }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button class="btn btn-info ml-3" id="viewAllButton">View All Analytics</button>
+            </div>
+        </div>
+
+        <div id="campaignAnalytics">
+            <h2 style="text-align: center; font-size: 24px;">Analytics</h2>
+            <!-- Add loading indicator under the Analytics section -->
+            <div id="loadingIndicator" style="display: none;">
+                <p>Loading...</p>
+                <!-- You can add an actual spinner or loading animation here -->
+            </div>
+            <div id="campaignAnalyticsTable">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Total Leads</th>  
+                            <th>Leads Contacted</th>
+                            <th>Leads Read</th>
+                            <th>Leads Replied</th>
+                            <th>Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody id="campaignAnalyticsTableBody">
+                        <!-- Campaign Analytics data will be inserted here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <canvas id="analyticsChart" width="400" height="400"></canvas>
+            </div>
+        </div>
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const viewAnalyticsDropdown = document.getElementById('viewAnalyticsDropdown');
+            const dropdownMenu = viewAnalyticsDropdown.nextElementSibling;
+            let currentCampaign = null; // Track the currently selected campaign
+            let myChart = null; // Track the chart instance
+    
+            // Set initial button text
+            viewAnalyticsDropdown.textContent = 'View Specific Analytics';
+    
+            // Function to populate view analytics dropdown items
+            function populateViewAnalyticsDropdown(campaignNames) {
+                dropdownMenu.innerHTML = ''; // Clear existing items
+    
+                campaignNames.forEach(name => {
+                    const newDropdownItem = document.createElement('a');
+                    newDropdownItem.classList.add('dropdown-item');
+                    newDropdownItem.textContent = name; // Set the name as text content
+                    dropdownMenu.appendChild(newDropdownItem);
+    
+                    // Add click event listener to handle viewing analytics for the selected campaign
+                    newDropdownItem.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const campaign = name; // Use the clicked campaign name
+                        viewAnalyticsDropdown.textContent = campaign; // Change button text to campaign name
+                        dropdownMenu.classList.remove('show');
+    
+                        // Fetch and display analytics for the selected campaign
+                        fetchCampaignAnalytics(campaign);
+                    });
+                });
+            }
+            
+            // Function to destroy the existing chart instance
+            function destroyChart() {
+                if (myChart) {
+                    myChart.destroy();
+                }
+            }
+
+            // Function to create or update the chart
+            function createOrUpdateChart(label, dataValues, chartTitle) {
+                const ctx = document.getElementById('analyticsChart').getContext('2d');
+                if (myChart) {
+                    myChart.destroy();
+                }
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total Leads', 'Leads Contacted', 'Leads Read', 'Leads Replied', 'Completed'],
+                        datasets: [{
+                            label: label,
+                            data: dataValues,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.5)',
+                                'rgba(54, 162, 235, 0.5)',
+                                'rgba(255, 206, 86, 0.5)',
+                                'rgba(75, 192, 192, 0.5)',
+                                'rgba(153, 102, 255, 0.5)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Hide the legend
+                            },
+                            title: {
+                                display: true,
+                                text: chartTitle 
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Function to show the loading indicator
+            function showLoadingIndicator() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                loadingIndicator.style.display = 'block';
+            }
+
+            // Function to hide the loading indicator
+            function hideLoadingIndicator() {
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                loadingIndicator.style.display = 'none';
+            }
+
+             // Function to fetch and display analytics for a specific campaign
+            function fetchCampaignAnalytics(campaignName) {
+                // Show loading indicator before making the fetch request
+                showLoadingIndicator();
+                // Perform a POST request to retrieve analytics for the selected campaign
+                fetch('{% url 'get_campaign_summary' %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}' // Include the CSRF token
+                    },
+                    body: JSON.stringify({ 'campaign_name': campaignName })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status); // Log response status
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    hideLoadingIndicator();
+                    // Update the current campaign
+                    currentCampaign = campaignName;
+
+                    // Extract the required analytics data from the response
+                    const { total_leads, contacted, leads_who_read, leads_who_replied, completed} = data;
+
+                    // Calculate percentages
+                    const contactedPercentage = ((contacted / total_leads) * 100).toFixed(1);
+                    const leadswhoReadPercentage = ((leads_who_read / total_leads) * 100).toFixed(1);
+                    const leadswhoRepliedPercentage = ((leads_who_replied / total_leads) * 100).toFixed(1);
+                    const completedPercentage = ((completed / total_leads) * 100).toFixed(1);
+
+                    // Display the analytics data in the table with percentages
+                    const campaignAnalyticsTableBody = document.getElementById('campaignAnalyticsTableBody');
+                    campaignAnalyticsTableBody.innerHTML = `
+                        <tr>
+                            <td>${total_leads ?? '-'}</td>
+                            <td>${contacted ?? '-'} (${contactedPercentage}%)</td>
+                            <td>${leads_who_read ?? '-'} (${leadswhoReadPercentage}%)</td>
+                            <td>${leads_who_replied ?? '-'} (${leadswhoRepliedPercentage}%)</td>
+                            <td>${completed ?? '-'} (${completedPercentage}%)</td>
+                        </tr>
+                    `;
+                
+                    // Update the chart data for specific campaign analytics
+                    createOrUpdateChart(`Analytics for ${campaignName}`, [total_leads ?? 0, contacted ?? 0, leads_who_read ?? 0, leads_who_replied ?? 0, completed ?? 0], `Analytics for ${campaignName}`   );
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+            
+            document.getElementById('viewAllButton').addEventListener('click', function (event) {
+                event.preventDefault();
+                viewAnalyticsDropdown.textContent = 'View All Analytics'; // Update dropdown text
+                
+                // Calculate total analytics for all campaigns
+                calculateTotalAnalytics();
+            });
+            
+            // Function to calculate total analytics for all campaigns
+            async function calculateTotalAnalytics() {
+                showLoadingIndicator();
+                const campaignItems = document.querySelectorAll('.dropdown-menu .dropdown-item');
+                let totalLeads = 0;
+                let leadsContacted = 0;
+                let leadsReplied = 0;
+                let leadsRead = 0;
+                let completed = 0;
+            
+                // Define a function to fetch summary analytics for a single campaign
+                async function fetchCampaignSummaryAsync(campaignName) {
+                    const response = await fetch('{% url 'get_campaign_summary' %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ 'campaign_name': campaignName })
+                    });
+                    const data = await response.json();
+                    return data;
+                }
+            
+                // Fetch summary analytics for each campaign and accumulate the totals
+                for (const item of campaignItems) {
+                    const campaignName = item.textContent.trim(); // Assuming the text content is the campaign name
+                    const campaignSummary = await fetchCampaignSummaryAsync(campaignName);
+                    
+                    totalLeads += campaignSummary.total_leads ?? 0;
+                    leadsContacted += campaignSummary.contacted ?? 0;
+                    leadsRead += campaignSummary.leads_who_read ?? 0;
+                    leadsReplied += campaignSummary.leads_who_replied ?? 0;
+                    completed += campaignSummary.completed ?? 0;
+                }
+            
+                // Calculate percentages for total analytics
+                const leadsContactedPercentage = ((leadsContacted / totalLeads) * 100).toFixed(1);
+                const leadsReadPercentage = ((leadsRead / totalLeads) * 100).toFixed(1);
+                const leadsRepliedPercentage = ((leadsReplied / totalLeads) * 100).toFixed(1);
+                const completedPercentage = ((completed / totalLeads) * 100).toFixed(1);
+            
+                // Display total analytics in the table with percentages
+                const campaignAnalyticsTableBody = document.getElementById('campaignAnalyticsTableBody');
+                campaignAnalyticsTableBody.innerHTML = `
+                    <tr>
+                        <td>${totalLeads}</td>
+                        <td>${leadsContacted} (${leadsContactedPercentage}%)</td>
+                        <td>${leadsRead} (${leadsReadPercentage}%)</td>
+                        <td>${leadsReplied} (${leadsRepliedPercentage}%)</td>
+                        <td>${completed} (${completedPercentage}%)</td>
+                    </tr>
+                `;
+                
+                // Destroy the previous chart instance if it exists
+                if (myChart) {
+                    myChart.destroy();
+                }   
+            
+                // Display total analytics in the chart (using Chart.js)
+                const ctx = document.getElementById('analyticsChart').getContext('2d');
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total Leads', 'Leads Contacted', 'Leads Read', 'Leads Replied', 'Completed'],
+                        datasets: [{
+                            label: 'Total Analytics', 
+                            data: [totalLeads, leadsContacted, leadsRead, leadsReplied, completed],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.5)',
+                                'rgba(54, 162, 235, 0.5)',
+                                'rgba(255, 206, 86, 0.5)',
+                                'rgba(75, 192, 192, 0.5)',
+                                'rgba(153, 102, 255, 0.5)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Hide the legend
+                            },
+                            title: {
+                                display: true,
+                                text: 'Total Analytics'
+                            }
+                        }   
+                    }
+                });
+
+                hideLoadingIndicator();
+            
+                // Update the chart label
+                myChart.data.datasets[0].label = 'Total Analytics';
+                myChart.update();
+            }
+            
+            // Fetch campaign names from the backend
+            fetch('{% url 'get_campaign_names' %}')
+                .then(response => response.json())
+                .then(data => {
+                    const campaignNames = data.campaigns; // Assuming the campaign names are returned as an array in 'data.campaigns'
+                    populateViewAnalyticsDropdown(campaignNames);
+
+                    // Display all analytics when the page loads
+                    calculateTotalAnalytics(); 
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+    
+            // Additional functionality for View Analytics dropdown
+            viewAnalyticsDropdown.addEventListener('click', function (event) {
+                event.preventDefault();
+                // Toggle the visibility of the dropdown menu
+                dropdownMenu.classList.toggle('show');
+            });
+    
+            window.addEventListener('click', function (event) {
+                if (!event.target.matches('.dropdown-toggle')) {
+                    const dropdowns = document.getElementsByClassName('dropdown-menu');
+                    for (let i = 0; i < dropdowns.length; i++) {
+                        const openDropdown = dropdowns[i];
+                        if (openDropdown !== dropdownMenu && openDropdown.classList.contains('show')) {
+                            openDropdown.classList.remove('show');
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

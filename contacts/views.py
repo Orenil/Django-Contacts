@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.forms import UserCreationForm
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -11,6 +11,7 @@ from .models import Contact, Campaign_Emails, Campaign
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as auth_logout
 from django.db.models import Count
 from django.contrib.auth.models import User
 from .forms import UserRegisterForm
@@ -21,6 +22,7 @@ import csv
 import json
 import requests
 import logging
+from datetime import date
 
 def login(request):
     if request.method == 'POST':
@@ -48,7 +50,23 @@ def register(request):
 
 @login_required
 def profile(request):
-    return render(request, 'profile.html')
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, f'Your Account has been updated!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+    
+    context = {
+        'u_form': u_form,
+        'p_form': p_form
+    }
+    return render(request, 'profile.html', context)
 
 def home(request):
     home = Contact.objects.all()
@@ -369,7 +387,6 @@ def filter_leads(request):
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @csrf_exempt
-@login_required
 def delete_selected_leads(request):
     if request.method == 'POST':
         try:
@@ -412,9 +429,7 @@ def delete_selected_leads(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-
 @csrf_exempt
-@login_required
 def launch_campaign(request):
     if request.method == 'POST':
         try:
@@ -424,7 +439,6 @@ def launch_campaign(request):
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c' 
 
             if campaign_name and api_key:
-                user = request.user
                 campaign_id = get_campaign_id(api_key, campaign_name)
 
                 if campaign_id:
@@ -454,7 +468,6 @@ def launch_campaign(request):
         return JsonResponse({'error': 'Invalid request method'}, status=400)
     
 @csrf_exempt
-@login_required
 def pause_campaign(request):
     if request.method == 'POST':
         try:
@@ -464,7 +477,6 @@ def pause_campaign(request):
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
 
             if campaign_name and api_key:
-                user = request.user
                 campaign_id = get_campaign_id(api_key, campaign_name)
 
                 if campaign_id:
@@ -490,5 +502,93 @@ def pause_campaign(request):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+@login_required
+def campaign_analytics(request):
+    # Fetch campaigns associated with the logged-in user only
+    user_campaigns = Campaign.objects.filter(user=request.user)
+    # Retrieve distinct campaign names
+    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
+
+    # Render the HTML template with the retrieved data
+    return render(request, 'analytics.html', {'distinct_campaigns': distinct_campaigns})
+    
+@csrf_exempt
+def get_campaign_summary(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            campaign_name = data.get('campaign_name')
+            print("Received Campaign Name:", campaign_name)
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+
+            if campaign_name and api_key: 
+                campaign_id = get_campaign_id(api_key, campaign_name)
+
+                if campaign_id:
+                    url = "https://api.instantly.ai/api/v1/analytics/campaign/summary"
+                    params = {
+                        "api_key": api_key,
+                        "campaign_id": campaign_id
+                    }
+
+                    response = requests.get(url, params=params)
+
+                    if response.status_code == 200:
+                        analytics_data = response.json()
+                        print(analytics_data)
+                        return JsonResponse(analytics_data, safe=False)
+                    else:
+                        return JsonResponse({'error': 'Failed to fetch analytics'}, status=response.status_code)
+                else:
+                    return JsonResponse({'error': 'Invalid campaign name'}, status=400)
+            else:
+                return JsonResponse({'error': 'Missing campaign_name or api_key'}, status=400)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500, safe=False)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+@csrf_exempt
+def get_campaign_status(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            campaign_name = data.get('campaign_name')
+            print("Received Campaign Name:", campaign_name)
+            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+
+            if campaign_name and api_key: 
+                campaign_id = get_campaign_id(api_key, campaign_name)
+
+                if campaign_id:
+                    url = "https://api.instantly.ai/api/v1/campaign/get/status"
+                    params = {
+                        "api_key": api_key,
+                        "campaign_id": campaign_id
+                    }
+
+                    response = requests.get(url, params=params)
+
+                    if response.status_code == 200:
+                        status_data = response.json()
+                        print(status_data)
+                        return JsonResponse(status_data, safe=False)
+                    else:
+                        return JsonResponse({'error': 'Failed to fetch analytics'}, status=response.status_code)
+                else:
+                    return JsonResponse({'error': 'Invalid campaign name'}, status=400)
+            else:
+                return JsonResponse({'error': 'Missing campaign_name or api_key'}, status=400)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500, safe=False)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)

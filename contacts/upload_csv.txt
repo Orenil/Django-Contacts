@@ -1,0 +1,16 @@
+<!-- Upload CSV Form -->
+    <!--<h2>Upload CSV</h2>
+    <form method="post" enctype="multipart/form-data" action="">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="csvFile">Choose CSV File:</label>
+            <div class="input-group col-md-6">
+                <input type="text" class="form-control" id="selectedFileName" readonly>
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-primary" id="chooseFileButton">Choose File</button>
+                </div>
+            </div>
+            <input type="file" class="form-control-file" id="csvFile" name="csv_file" style="display: none;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="display: none;" id="uploadButton">Upload</button>
+    </form -->

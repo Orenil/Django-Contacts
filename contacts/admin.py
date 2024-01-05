@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Contact
-from .models import Campaign_Emails, Campaign
+from .models import Campaign_Emails, Campaign, Profile
 class ContactAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'phone', 'title', 'company', 'type', 'location','level')
     search_fields = ('first_name', 'last_name', 'email', 'company', 'title')
@@ -24,3 +24,5 @@ class CampaignAdmin(admin.ModelAdmin):
 
 # Register the Campaign model with the custom CampaignAdmin in the admin site
 admin.site.register(Campaign, CampaignAdmin)
+
+admin.site.register(Profile)

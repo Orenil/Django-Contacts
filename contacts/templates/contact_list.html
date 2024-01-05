@@ -6,28 +6,7 @@
 <!-- Bootstrap JS -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-{% block title %}
-    <title>Contact List</title>
-{% endblock %}
-
 {% block content %}
-    <!-- Upload CSV Form -->
-    <h2>Upload CSV</h2>
-    <form method="post" enctype="multipart/form-data" action="{% url 'upload_csv' %}">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="csvFile">Choose CSV File:</label>
-            <div class="input-group col-md-6">
-                <input type="text" class="form-control" id="selectedFileName" readonly>
-                <div class="input-group-append">
-                    <button type="button" class="btn btn-primary" id="chooseFileButton">Choose File</button>
-                </div>
-            </div>
-            <input type="file" class="form-control-file" id="csvFile" name="csv_file" style="display: none;">
-        </div>
-        <button type="submit" class="btn btn-primary" style="display: none;" id="uploadButton">Upload</button>
-    </form>
-
     <div class="d-flex justify-content-end mt-3 mb-3">
         <!-- Add campaign dropdown -->
         <div class="ml-2">
@@ -45,7 +24,6 @@
     </div>
     <!-- Filter Menu -->
     <div class="filter-menu float-right">
-        <h4>Filter Contacts</h4>
         <label for="typeFilter">Type:</label>
         <select id="typeFilter">
             <option value="">All</option>
@@ -74,11 +52,11 @@
                 <option value="{{ level }}">{{ level }}</option>
             {% endfor %}
         </select>
+
+        &nbsp;&nbsp; 
+
         <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
     </div>
-
-    <hr> <!-- Add a horizontal line as a separator -->
-
     
     <h1>Contact List</h1>
 
@@ -127,36 +105,22 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const chooseFileButton = document.getElementById("chooseFileButton");
-            const uploadButton = document.getElementById("uploadButton");
-            const fileInput = document.getElementById("csvFile");
-
-            chooseFileButton.addEventListener("click", function() {
-                fileInput.click(); // Simulate click on the file input
-            });
-
-            fileInput.addEventListener("change", function() {
-                const fileName = fileInput.value.split("\\").pop(); // Extract the file name
-                document.getElementById("selectedFileName").value = fileName; // Display the file name in the text input
-                uploadButton.style.display = "block"; // Show the upload button once a file is chosen
-            });
-
             const contacts = document.querySelectorAll(".contact-row");
             const viewMoreButton = document.getElementById("viewMoreButton");
             const contactsPerPage = 6;
             let currentPage = 1;
-
+    
             // Hide all contacts initially
             contacts.forEach((contact, index) => {
                 if (index >= contactsPerPage) {
                     contact.style.display = "none";
                 }
             });
-
+    
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-
+    
                 contacts.forEach((contact, index) => {
                     if (index >= startIndex && index < endIndex) {
                         contact.style.display = ""; // Display contacts within the current page range
@@ -165,49 +129,49 @@
                     }
                 });
             }
-
+    
             const previousPageButton = document.getElementById("previousPageButton");
-
+    
             // Event listener for the "Previous Page" button
             previousPageButton.addEventListener("click", function() {
                 if (currentPage > 1) {
                     currentPage--;
-
+    
                     showContacts(currentPage);
-
+    
                     viewMoreButton.style.display = "block"; // Show the "Load More" button
                     if (currentPage === 1) {
                         previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
                     }
                 }
             });
-
+    
             // Modify the 'viewMoreButton' event listener to handle pagination after applying filters
             viewMoreButton.addEventListener("click", function() {
                 const totalContacts = contacts.length; // Assuming 'contacts' is the list of filtered contacts
                 const totalPages = Math.ceil(totalContacts / contactsPerPage);
-
+    
                 if (currentPage < totalPages) {
                     currentPage++;
-
+    
                     showContacts(currentPage);
-
+    
                     if (currentPage === totalPages) {
                         viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
                     }
                 } else {
                     viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
                 }
-
+    
                 previousPageButton.style.display = 'block'; // Show the "Previous Page" button
             });
-
+    
             // Show contacts for the initial page (page 1)
             showContacts(currentPage);
-        
+    
             const selectAllCheckbox = document.getElementById("selectAllCheckbox");
             const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
-
+    
             selectAllCheckbox.addEventListener("change", function() {
                 contactCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCheckbox.checked;
@@ -405,7 +369,7 @@
                     newDropdownItem.addEventListener('click', function(event) {
                         event.preventDefault();
                         const campaign = name; // Use the clicked campaign name
-                        alert(`Adding contacts to ${campaign}...`);
+                        alert(`Adding contacts to ${campaign}, please wait for 20 seconds`);
                         handleAddToCampaign(campaign); // Call the function to add contacts to the campaign
                     });
                 });
