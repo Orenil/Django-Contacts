@@ -66,6 +66,45 @@ class ContactAdmin(ImportExportModelAdmin, admin.ModelAdmin):
         return render(
             request, "admin/import_contacts_contact.html", context
         )
+        
+    
+    # global variables to improve performance
+    export_qs = None
+    total_count = 0
+    contacts = []
+
+    def export_action(self, request):
+        if request.method == 'POST':
+            offset = json.loads(request.POST.get('offset'))
+            limit = json.loads(request.POST.get('limit'))
+            self.contacts = []
+            if not self.export_qs:
+                self.export_qs = Contact.objects.all().values_list("first_name", "last_name", "email", "company", "title")
+
+            for obj in self.export_qs[offset:limit]:
+                self.contacts.append({
+                    "first_name": obj[0],
+                    "last_name": obj[1],
+                    "email": obj[2],
+                    "company": obj[3],
+                    "title": obj[4]
+                })
+
+            context = {
+                "results": self.contacts
+            }
+            return HttpResponse(json.dumps(context), content_type="application/json")
+
+        # define the queryset you want to export and get the count of rows
+        self.total_count = Contact.objects.all().count()
+        context = {"total_count": self.total_count, "form_title": "Export Characters to csv file",
+                   "description": "",
+                   "headers": ["First Name", "Last Name", "Email", "Company", "Title"],
+                   "endpoint": "/admin/contacts/contact/export/",
+                   "fileName": "contacts_contact"}
+        return render(
+            request, "admin/export_contacts_contact.html", context
+        )
 
 class Campaign_EmailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'campaign_name')
