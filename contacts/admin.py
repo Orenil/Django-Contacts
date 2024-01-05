@@ -8,8 +8,6 @@ class ContactAdmin(ImportExportModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'phone', 'title', 'company', 'type', 'location','level')
     search_fields = ('first_name', 'last_name', 'email', 'company', 'title')
 
-
-
 class Campaign_EmailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'campaign_name')
 
