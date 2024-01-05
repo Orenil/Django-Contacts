@@ -13,6 +13,9 @@ class Contact(models.Model):
     type = models.CharField(max_length=100, default='None')
     location = models.CharField(max_length=100)
     level = models.CharField(max_length=100, default='None')
+    
+    class Meta:
+        verbose_name = "Contact"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
