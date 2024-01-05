@@ -106,6 +106,8 @@ class ContactAdmin(ImportExportModelAdmin, admin.ModelAdmin):
             request, "admin/export_contacts_contact.html", context
         )
 
+admin.site.register(Contact, ContactAdmin)
+
 class Campaign_EmailsAdmin(admin.ModelAdmin):
     list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'campaign_name')
 
