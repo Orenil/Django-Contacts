@@ -7,79 +7,83 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 {% block content %}
-    <div class="d-flex justify-content-end mt-3 mb-3">
-        <!-- Add campaign dropdown -->
-        <div class="ml-2">
-            <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="addCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Add to Campaign
-                </button>
-                <div class="dropdown-menu" aria-labelledby="addCampaignDropdown">
-                    {% for campaign_name in campaign_names %}
+<div class="container mt-4">
+    <form id="contactListForm" method="post" action="{% url 'upload_to_campaign' %}">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-end mt-3 mb-3">
+            <!-- Add campaign dropdown -->
+            <div class="ml-2">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="addCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Add to Campaign
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="addCampaignDropdown">
+                        {% for campaign_name in campaign_names %}
                         <a class="dropdown-item" id="{{ campaign_name }}">{{ campaign_name }}</a>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Filter Menu -->
-    <div class="filter-menu float-right">
-        <label for="typeFilter">Type:</label>
-        <select id="typeFilter">
-            <option value="">All</option>
-            {% for type in distinct_types %}
+        <!-- Filter Menu -->
+        <div class="filter-menu float-right">
+            <label for="typeFilter">Type:</label>
+            <select id="typeFilter">
+                <option value="">All</option>
+                {% for type in distinct_types %}
                 <option value="{{ type }}">{{ type }}</option>
-            {% endfor %}
-        </select>
-        <label for="companyFilter">Company:</label>
-        <select id="companyFilter">
-            <option value="">All</option>
-            {% for company in distinct_companies %}
+                {% endfor %}
+            </select>
+            <label for="companyFilter">Company:</label>
+            <select id="companyFilter">
+                <option value="">All</option>
+                {% for company in distinct_companies %}
                 <option value="{{ company }}">{{ company }}</option>
-            {% endfor %}
-        </select>
-        <label for="locationFilter">Location:</label>
-        <select id="locationFilter">
-            <option value="">All</option>
-            {% for location in distinct_locations %}
+                {% endfor %}
+            </select>
+            <label for="locationFilter">Location:</label>
+            <select id="locationFilter">
+                <option value="">All</option>
+                {% for location in distinct_locations %}
                 <option value="{{ location }}">{{ location }}</option>
-            {% endfor %}
-        </select>
-        <label for="levelFilter">Level:</label>
-        <select id="levelFilter">
-            <option value="">All</option>
-            {% for level in distinct_levels %}
+                {% endfor %}
+            </select>
+            <label for="levelFilter">Level:</label>
+            <select id="levelFilter">
+                <option value="">All</option>
+                {% for level in distinct_levels %}
                 <option value="{{ level }}">{{ level }}</option>
-            {% endfor %}
-        </select>
+                {% endfor %}
+            </select>
 
-        &nbsp;&nbsp; 
+            &nbsp;&nbsp;
 
-        <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
-    </div>
-    
-    <h1>Contact List</h1>
+            <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
+        </div>
 
-    <!-- Display Contacts -->
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    <input type="checkbox" id="selectAllCheckbox">
-                </th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Title</th>
-                <th>Company</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Level</th>
-            </tr>
-        </thead>
-        <tbody id="contactTableBody">
-            {% for contact in contacts %}
+        <h1>Contact List</h1>
+
+        <!-- Display Contacts -->
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" id="selectAllCheckbox">
+                    </th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Title</th>
+                    <th>Company</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Level</th>
+                </tr>
+            </thead>
+            <tbody id="contactTableBody">
+                {% for contact in contacts %}
                 <tr class="contact-row" data-id="{{ contact.id }}">
                     <td>
                         <input type="checkbox" class="contact-checkbox" value="{{ contact.id }}">
@@ -94,14 +98,16 @@
                     <td>{{ contact.location }}</td>
                     <td>{{ contact.level }}</td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <div class="text-center">
-        <button id="viewMoreButton" class="btn btn-primary">Load More</button>
-        <button id="previousPageButton" style="display: none;">Previous Page</button>
-    </div>
+        <div class="text-center">
+            <button id="viewMoreButton" class="btn btn-primary">Load More</button>
+            <button id="previousPageButton" style="display: none;">Previous Page</button>
+        </div>
+    </form>
+</div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -260,99 +266,6 @@
                 }
                 return '';
             }
-            function handleAddToCampaign(campaign) {
-                const selectedContacts = [];
-                const selectedEmails = [];
-                const contactRows = document.querySelectorAll('.contact-row');
-            
-                contactRows.forEach(row => {
-                    const checkbox = row.querySelector('.contact-checkbox');
-                
-                    console.log('Checkbox:', checkbox); // Log the checkbox element
-                    console.log('Checkbox checked:', checkbox.checked); // Log the checkbox state
-            
-                    if (checkbox && checkbox.checked) {
-                        const contactDetails = {
-                            id: row.getAttribute('data-id'),
-                            first_name: getTextContent(row, 'td:nth-child(2)'),
-                            last_name: getTextContent(row, 'td:nth-child(3)'),
-                            email: getTextContent(row, 'td:nth-child(4)'),
-                            phone: getTextContent(row, 'td:nth-child(5)'),
-                            title: getTextContent(row, 'td:nth-child(6)'),
-                            company: getTextContent(row, 'td:nth-child(7)'),
-                            type: getTextContent(row, 'td:nth-child(8)'),
-                            location: getTextContent(row, 'td:nth-child(9)'),
-                            level: getTextContent(row, 'td:nth-child(10)')
-                        };
-            
-                        const isEmpty = Object.values(contactDetails).some(value => value.trim() === '');
-            
-                        if (!isEmpty) {
-                            selectedContacts.push(contactDetails);
-                            selectedEmails.push(contactDetails.email);
-                        } else {
-                            console.log('Skipping contact with incomplete details:', contactDetails);
-                        }
-                    }
-                });
-            
-                console.log('Selected Contacts:', selectedContacts); // Log the selected contacts
-                console.log('Selected Emails:', selectedEmails);
-            
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                if (selectedContacts.length > 0) {
-                    // Perform AJAX request to add selected contacts to the campaign
-                    fetch('/upload_to_campaign/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({
-                            selected_leads: selectedContacts,
-                            selected_emails: selectedEmails,
-                            campaign_name: campaign
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            setTimeout(() => {
-                                // Display success message after contacts have been added (simulated here)
-                                alert(`Added contacts to ${campaign} successfully!`);
-                            }, 2000); 
-                        } else {
-                            console.log('Failed to add contacts to the campaign.');
-                            // Handle failure or show an error message if necessary
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        // Handle errors if the request fails
-                    });
-                } else {
-                    console.log('No contacts selected.');
-                }
-            }
-
-            function getTextContent(element, selector) {
-                const foundElement = element.querySelector(selector);
-                const textContent = foundElement ? foundElement.textContent.trim() : '';
-                console.log('Text Content:', textContent); // Log the text content
-                return textContent;
-            }
-            
-            // Add click event listeners for dropdown items
-            document.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    const campaign = this.getAttribute('id');
-                
-                    // Handle adding contacts to the selected campaign
-                    alert(`Adding contacts to ${campaign}...`);
-                    handleAddToCampaign(campaign);
-                });
-            });
 
             // Function to dynamically generate dropdown items
             function populateCampaignDropdown(campaignNames) {
@@ -385,6 +298,96 @@
                 .catch(error => {
                     console.error('Error:', error);
                 });
+
+            // Function to handle adding contacts to a campaign
+
+            function handleAddToCampaign(campaign) {
+                const selectedContacts = [];
+                const selectedEmails = [];
+                const contactRows = document.querySelectorAll('.contact-row');
+
+                contactRows.forEach(row => {
+                    const checkbox = row.querySelector('.contact-checkbox');
+
+                    if (checkbox && checkbox.checked) {
+                        const contactDetails = {
+                            id: row.getAttribute('data-id'),
+                            first_name: getTextContent(row, 'td:nth-child(2)'),
+                            last_name: getTextContent(row, 'td:nth-child(3)'),
+                            email: getTextContent(row, 'td:nth-child(4)'),
+                            phone: getTextContent(row, 'td:nth-child(5)'),
+                            title: getTextContent(row, 'td:nth-child(6)'),
+                            company: getTextContent(row, 'td:nth-child(7)'),
+                            type: getTextContent(row, 'td:nth-child(8)'),
+                            location: getTextContent(row, 'td:nth-child(9)'),
+                            level: getTextContent(row, 'td:nth-child(10)')
+                        };
+
+                        const isEmpty = Object.values(contactDetails).some(value => value.trim() === '');
+
+                        if (!isEmpty) {
+                            selectedContacts.push(contactDetails);
+                            selectedEmails.push(contactDetails.email);
+                        } else {
+                            console.log('Skipping contact with incomplete details:', contactDetails);
+                        }
+                    }
+                });
+
+                console.log('Selected Contacts:', selectedContacts);
+                console.log('Selected Emails:', selectedEmails);
+
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                if (selectedContacts.length > 0) {
+                    // Perform AJAX request to add selected contacts to the campaign
+                    fetch('/upload_to_campaign/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({
+                            selected_leads: selectedContacts,
+                            selected_emails: selectedEmails,
+                            campaign_name: campaign
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`Added contacts to ${campaign} successfully!`);
+                        } else {
+                            console.log('Failed to add contacts to the campaign.');
+                            // Handle failure or show an error message if necessary
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Handle errors if the request fails
+                    });
+                } else {
+                    console.log('No contacts selected.');
+                }
+            }
+
+            // Function to get text content of an element based on selector
+            function getTextContent(element, selector) {
+                const foundElement = element.querySelector(selector);
+                const textContent = foundElement ? foundElement.textContent.trim() : '';
+                return textContent;
+            }
+            
+            // Add click event listeners for dropdown items
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const campaign = this.getAttribute('id');
+                
+                    // Handle adding contacts to the selected campaign
+                    alert(`Adding contacts to ${campaign}...`);
+                    handleAddToCampaign(campaign);
+                });
+            });
             
             // Additional functionality for Add to Campaign dropdown
             const addCampaignDropdown = document.getElementById('addCampaignDropdown');

@@ -302,6 +302,9 @@ def upload_to_campaign_view(request):
 
             # Filter out duplicates from selected leads based on email addresses
             selected_leads = [dict(t) for t in {tuple(d.items()) for d in selected_leads}]
+            
+            print('Received campaign name:', campaign_name)
+            print('Received selected leads:', selected_leads)
 
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
             campaign_id = get_campaign_id(api_key, campaign_name)
@@ -317,6 +320,7 @@ def upload_to_campaign_view(request):
                 return JsonResponse({'error': 'Failed to upload leads'}, status=500)
         
         except Exception as e:
+            print('Error occurred during lead upload:', str(e))
             return HttpResponseServerError('Error occurred while processing the request.')
 
 @login_required
