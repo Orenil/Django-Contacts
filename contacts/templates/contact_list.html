@@ -314,11 +314,13 @@
                             campaign_name: campaign
                         })
                     })
-                    .then(response => response.json()) // Parse response as JSON
+                    .then(response => response.json())
                     .then(data => {
-                        if (data.success) { // If the response indicates success
-                            // Display success message after contacts have been added
-                            alert(`Added contacts to ${campaign} successfully!`);
+                        if (data.success) {
+                            setTimeout(() => {
+                                // Display success message after contacts have been added (simulated here)
+                                alert(`Added contacts to ${campaign} successfully!`);
+                            }, 2000); 
                         } else {
                             console.log('Failed to add contacts to the campaign.');
                             // Handle failure or show an error message if necessary
@@ -328,6 +330,10 @@
                         console.error('Error:', error);
                         // Handle errors if the request fails
                     });
+                } else {
+                    console.log('No contacts selected.');
+                }
+            }
 
             function getTextContent(element, selector) {
                 const foundElement = element.querySelector(selector);
@@ -363,7 +369,7 @@
                     newDropdownItem.addEventListener('click', function(event) {
                         event.preventDefault();
                         const campaign = name; // Use the clicked campaign name
-                        alert(`Adding contacts to ${campaign}, please wait`);
+                        alert(`Adding contacts to ${campaign}, please wait for 20 seconds`);
                         handleAddToCampaign(campaign); // Call the function to add contacts to the campaign
                     });
                 });
