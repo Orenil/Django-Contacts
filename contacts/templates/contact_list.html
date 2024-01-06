@@ -314,13 +314,11 @@
                             campaign_name: campaign
                         })
                     })
-                    .then(response => response.json())
+                    .then(response => response.json()) // Parse response as JSON
                     .then(data => {
-                        if (data.success) {
-                            setTimeout(() => {
-                                // Display success message after contacts have been added (simulated here)
-                                alert(`Added contacts to ${campaign} successfully!`);
-                            }, 2000); 
+                        if (data.success) { // If the response indicates success
+                            // Display success message after contacts have been added
+                            alert(`Added contacts to ${campaign} successfully!`);
                         } else {
                             console.log('Failed to add contacts to the campaign.');
                             // Handle failure or show an error message if necessary
@@ -330,10 +328,6 @@
                         console.error('Error:', error);
                         // Handle errors if the request fails
                     });
-                } else {
-                    console.log('No contacts selected.');
-                }
-            }
 
             function getTextContent(element, selector) {
                 const foundElement = element.querySelector(selector);
