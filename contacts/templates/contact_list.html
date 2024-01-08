@@ -140,13 +140,16 @@
             const previousPageButton = document.getElementById("previousPageButton");
     
             // Event listener for the "Previous Page" button
-            previousPageButton.addEventListener("click", function() {
+            previousPageButton.addEventListener("click", function(event) {
+                event.preventDefault(); // Prevent the default behavior of the button
+
                 if (currentPage > 1) {
                     currentPage--;
-    
+
                     showContacts(currentPage);
-    
+
                     viewMoreButton.style.display = "block"; // Show the "Load More" button
+
                     if (currentPage === 1) {
                         previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
                     }
