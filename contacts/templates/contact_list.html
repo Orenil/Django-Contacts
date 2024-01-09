@@ -197,10 +197,10 @@
                 let count = 0; // Counter for displayed rows
                 $('#contactTableBody tr').each(function() {
                     if (count < 6) {
-                        const type = $(this).find('td:nth-child(8)').text().trim();
-                        const company = $(this).find('td:nth-child(7)').text().trim();
-                        const location = $(this).find('td:nth-child(9)').text().trim();
-                        const level = $(this).find('td:nth-child(10)').text().trim(); // Get level from table
+                        const type = $(this).find('td:nth-child(7)').text().trim();
+                        const company = $(this).find('td:nth-child(6)').text().trim();
+                        const location = $(this).find('td:nth-child(8)').text().trim();
+                        const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
 
                         // Show/hide rows based on filter criteria
                         if (
@@ -222,7 +222,7 @@
                 // Check if more rows exist with the selected filter value(s)
                 const filteredRowsWithFilter = $('#contactTableBody tr').filter(function() {
                     const type = $(this).find('td:nth-child(7)').text().trim();
-                    const company = $(this).find('td:nth-child(5)').text().trim();
+                    const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
 
@@ -318,11 +318,11 @@
                             first_name: getTextContent(row, 'td:nth-child(2)'),
                             last_name: getTextContent(row, 'td:nth-child(3)'),
                             email: getTextContent(row, 'td:nth-child(4)'),
-                            title: getTextContent(row, 'td:nth-child(6)'),
-                            company: getTextContent(row, 'td:nth-child(7)'),
-                            type: getTextContent(row, 'td:nth-child(8)'),
-                            location: getTextContent(row, 'td:nth-child(9)'),
-                            level: getTextContent(row, 'td:nth-child(10)')
+                            title: getTextContent(row, 'td:nth-child(5)'),
+                            company: getTextContent(row, 'td:nth-child(6)'),
+                            type: getTextContent(row, 'td:nth-child(7)'),
+                            location: getTextContent(row, 'td:nth-child(8)'),
+                            level: getTextContent(row, 'td:nth-child(9)')
                         };
 
                         const isEmpty = Object.values(contactDetails).some(value => value.trim() === '');

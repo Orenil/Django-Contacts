@@ -120,13 +120,13 @@ def upload_csv(request):
                 for row in csv_data:
                     row_count += 1
                     if len(row) == len(headers):  # Validate row against headers
-                        first_name, last_name, email, phone, title, company, type, location, level = row
+                        first_name, last_name, email, title, company, type, location, level = row
                         existing_contact = Contact.objects.filter(email=email).first()
                         if existing_contact:
                             messages.warning(request, f"Skipped row at index {row_count}: {row}. Contact with email '{email}' already exists.")
                         else:
                             Contact.objects.create(
-                                first_name=first_name, last_name=last_name, email=email, phone=phone,
+                                first_name=first_name, last_name=last_name, email=email,
                                 title=title, company=company, type=type,
                                 location=location, level=level
                             )
@@ -191,7 +191,7 @@ def filter_contacts(request):
 
 def get_selected_contacts(request):
     contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
-    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'phone', 'company', 'type', 'location', 'level')
+    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'company', 'type', 'location', 'level')
 
     return JsonResponse({'contacts': list(contacts)})
 
