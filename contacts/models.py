@@ -7,7 +7,6 @@ class Contact(models.Model):
     first_name = models.CharField(max_length=50, default='None')
     last_name = models.CharField(max_length=50, default='None')
     email = models.EmailField()
-    phone = models.CharField(max_length=20)
     title = models.CharField(max_length=100, default='No Title')
     company = models.CharField(max_length=100, default='No Company')
     type = models.CharField(max_length=100, default='None')

@@ -74,7 +74,6 @@
                     <th>First Name</th>
                     <th>Last Name</th>
                     <th>Email</th>
-                    <th>Phone</th>
                     <th>Title</th>
                     <th>Company</th>
                     <th>Type</th>
@@ -91,7 +90,6 @@
                     <td>{{ contact.first_name }}</td>
                     <td>{{ contact.last_name }}</td>
                     <td>{{ contact.email }}</td>
-                    <td>{{ contact.phone }}</td>
                     <td>{{ contact.title }}</td>
                     <td>{{ contact.company }}</td>
                     <td>{{ contact.type }}</td>
@@ -320,7 +318,6 @@
                             first_name: getTextContent(row, 'td:nth-child(2)'),
                             last_name: getTextContent(row, 'td:nth-child(3)'),
                             email: getTextContent(row, 'td:nth-child(4)'),
-                            phone: getTextContent(row, 'td:nth-child(5)'),
                             title: getTextContent(row, 'td:nth-child(6)'),
                             company: getTextContent(row, 'td:nth-child(7)'),
                             type: getTextContent(row, 'td:nth-child(8)'),
