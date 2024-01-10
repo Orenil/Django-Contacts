@@ -152,15 +152,15 @@
             });
 
             function updatePaginationUI(currentPage, totalPages) {
-                const maxVisibleButtons = 5; // Adjust this number based on your preference
-            
                 const paginationContainer = document.querySelector('.pagination-container');
                 paginationContainer.innerHTML = ''; // Clear existing pagination
             
                 const paginationUL = document.createElement('ul');
                 paginationUL.classList.add('pagination', 'justify-content-center');
             
-                // Previous Button
+                const MAX_PAGES_DISPLAYED = 5;
+            
+                // Create and append 'Previous' button
                 const previousButton = document.createElement('li');
                 previousButton.classList.add('page-item');
                 previousButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
@@ -169,45 +169,36 @@
                 }
                 paginationUL.appendChild(previousButton);
             
-                if (totalPages <= maxVisibleButtons) {
-                    // Display all page buttons without ellipsis
-                    for (let i = 1; i <= totalPages; i++) {
-                        const pageButton = createPageButton(i, i === currentPage);
+                // Display page numbers with ellipses
+                for (let i = 1; i <= totalPages; i++) {
+                    if (
+                        i === 1 ||
+                        i === totalPages ||
+                        (i >= currentPage - Math.floor(MAX_PAGES_DISPLAYED / 2) &&
+                            i <= currentPage + Math.floor(MAX_PAGES_DISPLAYED / 2))
+                    ) {
+                        const pageButton = document.createElement('li');
+                        pageButton.classList.add('page-item');
+                        pageButton.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                        if (i === currentPage) {
+                            pageButton.classList.add('active');
+                        }
                         paginationUL.appendChild(pageButton);
-                    }
-                } else {
-                    // Display first few pages
-                    for (let i = 1; i <= Math.min(maxVisibleButtons - 2, currentPage); i++) {
-                        const pageButton = createPageButton(i, i === currentPage);
-                        paginationUL.appendChild(pageButton);
-                    }
-            
-                    // Display ellipsis if there are pages in the middle
-                    if (currentPage > maxVisibleButtons - 2) {
-                        const ellipsisButton = createPageButton('...', true);
-                        paginationUL.appendChild(ellipsisButton);
-                    }
-            
-                    // Display current page and next few pages
-                    for (let i = Math.max(currentPage - 1, maxVisibleButtons - 2); i <= Math.min(currentPage + 1, totalPages); i++) {
-                        const pageButton = createPageButton(i, i === currentPage);
-                        paginationUL.appendChild(pageButton);
-                    }
-            
-                    // Display ellipsis if there are pages at the end
-                    if (currentPage < totalPages - (maxVisibleButtons - 2)) {
-                        const ellipsisButton = createPageButton('...', true);
-                        paginationUL.appendChild(ellipsisButton);
-                    }
-            
-                    // Display last few pages
-                    for (let i = Math.max(totalPages - (maxVisibleButtons - 2), currentPage + 2); i <= totalPages; i++) {
-                        const pageButton = createPageButton(i, i === currentPage);
-                        paginationUL.appendChild(pageButton);
+                    } else if (
+                        (i === currentPage - Math.floor(MAX_PAGES_DISPLAYED / 2) - 1 ||
+                            i === currentPage + Math.floor(MAX_PAGES_DISPLAYED / 2) + 1) &&
+                        i > 1 &&
+                        i < totalPages
+                    ) {
+                        // Display ellipses
+                        const ellipsisItem = document.createElement('li');
+                        ellipsisItem.classList.add('page-item', 'disabled');
+                        ellipsisItem.innerHTML = '<span class="page-link">...</span>';
+                        paginationUL.appendChild(ellipsisItem);
                     }
                 }
             
-                // Next Button
+                // Create and append 'Next' button
                 const nextButton = document.createElement('li');
                 nextButton.classList.add('page-item');
                 nextButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
@@ -216,7 +207,7 @@
                 }
                 paginationUL.appendChild(nextButton);
             
-                // Contacts Info Section
+                // Show number of contacts being displayed out of total contacts
                 const contactRows = document.querySelectorAll('.contact-row');
                 const totalContacts = contactRows.length;
                 const startIndex = (currentPage - 1) * contactsPerPage;
@@ -240,19 +231,6 @@
                         }
                     });
                 });
-            }
-            
-            function createPageButton(pageNumber, isActive = false) {
-                const pageButton = document.createElement('li');
-                pageButton.classList.add('page-item', isActive ? 'active' : '');
-            
-                if (!isActive) {
-                    pageButton.innerHTML = `<a class="page-link" href="#" data-page="${pageNumber}">${pageNumber}</a>`;
-                } else {
-                    pageButton.innerHTML = `<span class="page-link">${pageNumber}</span>`;
-                }
-            
-                return pageButton;
             }
         
             function showContacts(pageNumber) {
