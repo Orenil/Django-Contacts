@@ -8,6 +8,20 @@
 <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
 {% block content %}
+    <style>
+        /* Your CSS styles go here */
+        .filter-menu {
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <style>
+        .contacts-info {
+            margin-top: 10px; /* Adjust top margin */
+            /* You can add other margin or padding properties as needed */
+        }
+    </style>
+
     <form method="post" action="{% url 'delete_selected_leads' %}">
         {% csrf_token %}
 
@@ -68,6 +82,13 @@
                     </table>
                 </div>
             </div>
+
+             <!-- Search Bar -->
+             <div class="row mb-3">
+                <div class="col-md-6 offset-md-3">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+                </div>
+            </div>
             
             <!-- Filter Menu -->
             <div class="filter-menu float-right mt-3">
@@ -99,41 +120,58 @@
             <div id="campaignContent" class="mt-3">
                 <h2>Leads</h2>
                 <div id="campaignEmailsContainer">
-                    <table class="table">
-                        <thead>
+                    <table class="table table-striped table-sm">
+                        <thead class="thead-dark">
                             <tr>
-                                <th><input type="checkbox" id="selectAllCheckbox"></th>
-                                <th>First Name</th>
-                                <th>Last Name</th>
-                                <th>Email</th>
-                                <th>Company</th>
-                                <th>Title</th>
-                                <th>Type</th>
-                                <th>Location</th>
-                                <th>Campaign Name</th>
+                                <th scope="col">
+                                    <div class="text-center">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="selectAllCheckbox">
+                                            <label class="custom-control-label" for="selectAllCheckbox"></label>
+                                        </div>
+                                    </div>
+                                </th>
+                                <th scope="col">First Name</th>
+                                <th scope="col">Last Name</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Company</th>
+                                <th scope="col">Title</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Location</th>
+                                <th scope="col">Campaign Name</th>
                             </tr>
                         </thead>
                         <tbody id="campaignEmailsTableBody">
                             <!-- Dynamic content for campaign emails -->
                             {% for email_entry in campaign_emails %}
-                                <tr data-campaign="{{ email_entry.campaign_name }}">
-                                    <td><input type="checkbox" class="rowCheckbox" name="lead_ids" value="{{ email_entry.id }}"></td>
-                                    <td>{{ email_entry.first_name }}</td>
-                                    <td>{{ email_entry.last_name }}</td>
-                                    <td>{{ email_entry.email }}</td>
-                                    <td>{{ email_entry.company }}</td>
-                                    <td>{{ email_entry.title }}</td>
-                                    <td>{{ email_entry.type }}</td>
-                                    <td>{{ email_entry.location }}</td>
-                                    <td>{{ email_entry.campaign_name }}</td>
-                                </tr>
+                            <tr data-campaign="{{ email_entry.campaign_name }}">
+                                <td>
+                                    <div class="text-center">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input rowCheckbox" name="lead_ids" value="{{ email_entry.id }}" id="rowCheckbox{{ email_entry.id }}">
+                                            <label class="custom-control-label" for="rowCheckbox{{ email_entry.id }}"></label>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ email_entry.first_name }}</td>
+                                <td>{{ email_entry.last_name }}</td>
+                                <td>{{ email_entry.email }}</td>
+                                <td>{{ email_entry.company }}</td>
+                                <td>{{ email_entry.title }}</td>
+                                <td>{{ email_entry.type }}</td>
+                                <td>{{ email_entry.location }}</td>
+                                <td>{{ email_entry.campaign_name }}</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div id="paginationInfo" class="mt-3"></div>
-                <button class="btn btn-primary mt-3" id="loadMoreButton">Load More</button>
-                <button id="previousPageButton" style="display: none;">Previous Page</button>
+                <!-- Pagination container -->
+                <div class="pagination-container">
+                    <ul class="pagination justify-content-center">
+                        <!-- Pagination will be dynamically generated here -->
+                    </ul>
+                </div>
             </div>
         </div>
     </form>
@@ -142,10 +180,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
+        $(document).ready(function () {
+            // Check or uncheck all checkboxes
+            $("#selectAllCheckbox").change(function () {
+                $(".rowCheckbox").prop('checked', $(this).prop("checked"));
+            });
+    
+            // Individual checkbox click
+            $(".rowCheckbox").change(function () {
+                if (!$(this).prop("checked")) {
+                    $("#selectAllCheckbox").prop("checked", false);
+                }
+            });
+        });
         document.addEventListener("DOMContentLoaded", function() {
             const leads = document.querySelectorAll(".rowCheckbox");
             const viewMoreButton = document.getElementById("loadMoreButton");
-            const leadsPerPage = 6;
+            const leadsPerPage = 50;
             let currentPage = 1;
         
             function hideAllLeads() {
@@ -164,82 +215,101 @@
         
                 leads.forEach((lead, index) => {
                     if (index >= startIndex && index < endIndex) {
-                        lead.closest('tr').style.display = ""; 
+                        lead.closest('tr').style.display = "";
                     } else {
-                        lead.closest('tr').style.display = "none"; 
+                        lead.closest('tr').style.display = "none";
                     }
                 });
             }
-
-            const previousPageButton = document.getElementById("previousPageButton");
-
-            // Event listener for the "Previous Page" button
-            previousPageButton.addEventListener("click", function() {
-                event.preventDefault(); // Prevent the default action
-
-                if (currentPage > 1) {
-                    currentPage--;
-
-                    showLeads(currentPage);
-
-                    viewMoreButton.style.display = "block"; // Show the "Load More" button
-                    if (currentPage === 1) {
-                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
-                    }
-                }
-            });
         
-            // Modify the 'viewMoreButton' event listener to show the "Previous Page" button when navigating to the next page
-            viewMoreButton.addEventListener("click", function(event) {
-                event.preventDefault(); // Prevent the default action
+            function updatePaginationUI(currentPage, totalPages) {
+                const paginationContainer = document.querySelector('.pagination-container');
+                paginationContainer.innerHTML = '';
+        
+                const paginationUL = document.createElement('ul');
+                paginationUL.classList.add('pagination', 'justify-content-center');
 
-                currentPage++;
-                const totalLeads = leads.length;
-                const totalPages = Math.ceil(totalLeads / leadsPerPage);
+                const startIndex = (currentPage - 1) * leadsPerPage + 1;
+                const endIndex = Math.min(startIndex + leadsPerPage - 1, leads.length);
+                const totalContacts = leads.length;
 
-                if (currentPage <= totalPages) {
-                    showLeads(currentPage);
-
-                    if (currentPage === totalPages) {
-                        viewMoreButton.style.display = "none"; // Hide button when reaching the last page
-                    }
-
-                    previousPageButton.style.display = "block"; // Show the "Previous Page" button
+                const contactsRange = document.createElement('span');
+                contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
+                contactsRange.classList.add('contacts-range-info');
+                paginationContainer.appendChild(contactsRange);
+        
+                const previousButton = document.createElement('li');
+                previousButton.classList.add('page-item');
+                previousButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
+                if (currentPage === 1) {
+                    previousButton.classList.add('disabled');
                 }
-            });
-
-            const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
-            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-
-            // Event listener for the "Select All" checkbox
-            selectAllCheckbox.addEventListener('change', function() {
-                rowCheckboxes.forEach(checkbox => {
-                    checkbox.checked = selectAllCheckbox.checked;
+                paginationUL.appendChild(previousButton);
+        
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageButton = document.createElement('li');
+                    pageButton.classList.add('page-item');
+                    pageButton.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                    if (i === currentPage) {
+                        pageButton.classList.add('active');
+                    }
+                    paginationUL.appendChild(pageButton);
+                }
+        
+                const nextButton = document.createElement('li');
+                nextButton.classList.add('page-item');
+                nextButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
+                if (currentPage === totalPages) {
+                    nextButton.classList.add('disabled');
+                }
+                paginationUL.appendChild(nextButton);
+        
+                paginationContainer.appendChild(paginationUL);
+        
+                paginationUL.querySelectorAll('a.page-link').forEach(link => {
+                    link.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        const pageNumber = parseInt(this.getAttribute('data-page'));
+                        if (!isNaN(pageNumber)) {
+                            currentPage = pageNumber;
+                            showLeads(currentPage);
+                            updatePaginationUI(currentPage, totalPages);
+                        }
+                    });
                 });
-            })
+                // Disable previous and next buttons if there is only one page or fewer pages than the current page
+                if (totalPages <= 1 || currentPage >= totalPages) {
+                    nextButton.classList.add('disabled');
+                }
+                if (currentPage <= 1) {
+                    previousButton.classList.add('disabled');
+                }
+            }
+        
+            function calculateTotalPages() {
+                const totalLeads = leads.length;
+                return Math.ceil(totalLeads / leadsPerPage);
+            }
+        
+            const totalPages = calculateTotalPages();
+            hideAllLeads();
+            showLeads(currentPage);
+            updatePaginationUI(currentPage, totalPages);        
             
 
             function initEventListeners() {
 
                 function showLimitedItemsInViewCampaignDropdown() {
                     const dropdownItems = $('[aria-labelledby="viewCampaignDropdown"] .view-campaign');
-                    const itemsToShow = 6;
-            
-                    dropdownItems.each(function(index) {
+                    const itemsToShow = 50;
+                
+                    dropdownItems.each(function (index) {
                         if (index < itemsToShow) {
                             $(this).show();
                         } else {
                             $(this).hide();
                         }
                     });
-            
-                    // Show/hide Load More button based on the number of items displayed
-                    const visibleItems = dropdownItems.filter(':visible').length;
-                    if (visibleItems <= itemsToShow) {
-                        $('#loadMoreButton').hide();
-                    } else {
-                        $('#loadMoreButton').show();
-                    }
                 }
             
                 // Event listener for the dropdown to toggle the visibility of items
@@ -296,84 +366,101 @@
                         $(this).hide();
                     }
                 });
-
+            
                 // Update the button text to the selected campaign
                 $('#viewCampaignDropdown').text(campaignName);
+            
+                // Calculate total visible rows for the selected campaign
+                const filteredRows = $(`#campaignEmailsTableBody tr[data-campaign="${campaignName}"]:visible`);
+                const totalFilteredRows = filteredRows.length;
+                const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
+            
+                // Update pagination UI based on the filtered rows
+                updatePaginationUI(currentPage, totalPages);
+
+                // Update the contacts range information
+                const startIndex = (currentPage - 1) * leadsPerPage + 1;
+                const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredRows);
+                const totalContacts = totalFilteredRows;
+                const contactsRange = document.querySelector('.contacts-range-info');
+                contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
             }
 
             // Function to display all campaigns in the table
             function viewAllCampaigns() {
                 const campaignTableBody = $('#campaignEmailsTableBody');
-                const maxItems = 6;
+                const maxItems = 50;
                 const tableRows = campaignTableBody.find('tr');
-            
+                
                 // Show the first six rows and hide the rest
                 tableRows.hide();
-            
+                
                 for (let i = 0; i < maxItems; i++) {
                     $(tableRows[i]).show(); // Show the first six rows
                 }
-            
+                
                 const totalHiddenItems = tableRows.length - maxItems;
-            
-                // Show "Load More" button if there are more items to display
-                if (totalHiddenItems > 0) {
-                    $('#loadMoreButton').show();
-                } else {
-                    $('#loadMoreButton').hide();
-                }
-            
+                
                 // Reset dropdown text to default
                 $('#viewCampaignDropdown').text('View Specific Campaign');
+
+                // Calculate total pages after displaying all campaigns
+                const totalPages = Math.ceil(tableRows.length / maxItems);
+
+                // Update pagination UI after displaying all campaigns
+                updatePaginationUI(1, totalPages); // Assuming that after showing all campaigns, the pagination should start at page 1
             }
 
-            //Function to apply filters in the table
+            // Apply Filters button
             function applyFilters() {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
-            
-                let count = 0; // Counter for displayed rows
-                $('#campaignEmailsTableBody tr').each(function() {
-                    if (count < 6) {
-                        const type = $(this).find('td:nth-child(7)').text().trim();
-                        const company = $(this).find('td:nth-child(5)').text().trim();
-                        const location = $(this).find('td:nth-child(8)').text().trim();
-            
-                        // Show/hide rows based on filter criteria
-                        if (
-                            (selectedType === '' || type === selectedType) &&
-                            (selectedCompany === '' || company === selectedCompany) &&
-                            (selectedLocation === '' || location === selectedLocation)
-                        ) {
-                            $(this).show();
-                            count++;
-                        } else {
-                            $(this).hide();
-                        }
-                    } else {
-                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
-                    }
-                });
-            
-                // Check if more rows exist with the selected filter value(s)
-                const filteredRowsWithFilter = $('#campaignEmailsTableBody tr').filter(function() {
+
+                let filteredLeads = [];
+
+                $('#campaignEmailsTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(5)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
-            
-                    return (
+
+                    if (
                         (selectedType === '' || type === selectedType) &&
                         (selectedCompany === '' || company === selectedCompany) &&
                         (selectedLocation === '' || location === selectedLocation)
-                    );
-                }).length;
-            
-                // Show Load More button if more rows with the selected filter value(s) are available
-                if (filteredRowsWithFilter > 6) {
-                    $('#loadMoreButton').show();
+                    ) {
+                        filteredLeads.push(this);
+                    }
+                });
+
+                // Hide all rows in the table
+                $('#campaignEmailsTableBody tr').hide();
+
+                const totalFilteredLeads = filteredLeads.length;
+                const totalPages = Math.ceil(totalFilteredLeads / leadsPerPage);
+
+                if (totalFilteredLeads > 0) {
+                    // Display the filtered leads for the first page
+                    const startIndex = 1;
+                    const endIndex = Math.min(leadsPerPage, totalFilteredLeads);
+                    const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
+
+                    $(leadsToShow).each(function () {
+                        $(this).show();
+                    });
+
+                    // Update the pagination UI based on the filtered rows
+                    updatePaginationUI(1, totalPages);
+
+                    // Update the contacts range information
+                    const contactsRange = document.querySelector('.contacts-range-info');
+                    contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalFilteredLeads} leads`;
                 } else {
-                    $('#loadMoreButton').hide();
+                    // If no filtered leads, update pagination and contacts range for an empty result set
+                    updatePaginationUI(1, 0);
+
+                    const contactsRange = document.querySelector('.contacts-range-info');
+                    contactsRange.innerHTML = `No leads to display`;
                 }
             }
             
@@ -588,6 +675,39 @@
                     // User clicked cancel, do nothing or perform additional action
                 }
             }
+            // Search functionality
+            $('#searchInput').on('keyup', function() {
+                const searchText = $(this).val().toLowerCase();
+                $('#campaignEmailsTableBody tr').each(function() {
+                    const rowData = $(this).text().toLowerCase();
+                    if (rowData.includes(searchText)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+
+                // Calculate total pages after filtering
+                const filteredRows = $('#campaignEmailsTableBody tr:visible');
+                const totalFilteredRows = filteredRows.length;
+                const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
+
+                // Reset pagination to the first page when search text is cleared
+                if (searchText === '') {
+                    currentPage = 1;
+                    showLeads(currentPage); // Show the initial set of items per page
+                }
+
+                // Update pagination UI based on filtered rows
+                updatePaginationUI(currentPage, totalPages);
+
+                // Update the contacts range information
+                const startIndex = (currentPage - 1) * leadsPerPage + 1;
+                const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredRows);
+                const totalContacts = totalFilteredRows;
+                const contactsRange = document.querySelector('.contacts-range-info');
+                contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
+            });
         });
     </script>
 {% endblock %}

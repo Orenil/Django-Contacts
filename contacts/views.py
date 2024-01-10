@@ -164,7 +164,7 @@ def filter_contacts(request):
             filtered_contacts = filtered_contacts.filter(level=level_filter)
 
         # Pagination logic
-        contacts_per_page = 6  # Set the number of contacts per page
+        contacts_per_page = 50  # Set the number of contacts per page
 
         paginator = Paginator(filtered_contacts, contacts_per_page)
 
@@ -364,7 +364,7 @@ def filter_leads(request):
             filtered_emails = filtered_emails.filter(location=location_filter)
 
         # Pagination
-        emails_per_page = 6  # Set the number of emails per page
+        emails_per_page = 50  # Set the number of emails per page
 
         paginator = Paginator(filtered_emails, emails_per_page)
 

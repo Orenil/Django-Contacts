@@ -8,6 +8,20 @@
 
 {% block content %}
 <div class="container mt-4">
+
+    <style>
+        .contacts-info {
+            margin-top: 10px; /* Adjust top margin */
+            /* You can add other margin or padding properties as needed */
+        }
+    </style>
+    <!-- Search Bar -->
+    <div class="row mb-3">
+        <div class="col-md-6 offset-md-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+        </div>
+    </div>
+
     <form id="contactListForm" method="post" action="{% url 'contact-list' %}">
         {% csrf_token %}
 
@@ -65,27 +79,39 @@
         <h1>Contact List</h1>
 
         <!-- Display Contacts -->
-        <table class="table">
-            <thead>
+        <!-- Add Bootstrap table class and styling -->
+        <table class="table table-striped table-sm">
+            <thead class="thead-dark">
                 <tr>
-                    <th>
-                        <input type="checkbox" id="selectAllCheckbox">
+                    <th scope="col">
+                        <div class="text-center">   
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="selectAllCheckbox">
+                                <label class="custom-control-label" for="selectAllCheckbox"></label>
+                            </div>
+                        </div>
                     </th>
-                    <th>First Name</th>
-                    <th>Last Name</th>
-                    <th>Email</th>
-                    <th>Title</th>
-                    <th>Company</th>
-                    <th>Type</th>
-                    <th>Location</th>
-                    <th>Level</th>
+                    <th scope="col">First Name</th>
+                    <th scope="col">Last Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Company</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">Level</th>
                 </tr>
             </thead>
             <tbody id="contactTableBody">
+                <!-- Your contact rows will go here -->
                 {% for contact in contacts %}
                 <tr class="contact-row" data-id="{{ contact.id }}">
                     <td>
-                        <input type="checkbox" class="contact-checkbox" value="{{ contact.id }}">
+                        <div class="text-center">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input contact-checkbox" id="contactCheckbox{{ contact.id }}" value="{{ contact.id }}">
+                                <label class="custom-control-label" for="contactCheckbox{{ contact.id }}"></label>
+                            </div>
+                        </div>
                     </td>
                     <td>{{ contact.first_name }}</td>
                     <td>{{ contact.last_name }}</td>
@@ -100,18 +126,22 @@
             </tbody>
         </table>
 
-        <div class="text-center">
-            <button id="viewMoreButton" class="btn btn-primary">Load More</button>
-            <button id="previousPageButton" style="display: none;">Previous Page</button>
+        <div class="pagination-container">
+            <ul class="pagination justify-content-center">
+                <!-- Pagination will be dynamically generated here -->
+            </ul>
         </div>
     </form>
 </div>
+
+    <!-- Add jQuery library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const contacts = document.querySelectorAll(".contact-row");
             const viewMoreButton = document.getElementById("viewMoreButton");
-            const contactsPerPage = 6;
+            const contactsPerPage = 50;
             let currentPage = 1;
     
             // Hide all contacts initially
@@ -120,7 +150,69 @@
                     contact.style.display = "none";
                 }
             });
-    
+
+            function updatePaginationUI(currentPage, totalPages) {
+                const paginationContainer = document.querySelector('.pagination-container');
+                paginationContainer.innerHTML = ''; // Clear existing pagination
+        
+                const paginationUL = document.createElement('ul');
+                paginationUL.classList.add('pagination', 'justify-content-center');
+        
+                // Create and append 'Previous' button
+                const previousButton = document.createElement('li');
+                previousButton.classList.add('page-item');
+                previousButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
+                if (currentPage === 1) {
+                    previousButton.classList.add('disabled');
+                }
+                paginationUL.appendChild(previousButton);
+        
+                // Create and append page number buttons
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageButton = document.createElement('li');
+                    pageButton.classList.add('page-item');
+                    pageButton.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                    if (i === currentPage) {
+                        pageButton.classList.add('active');
+                    }
+                    paginationUL.appendChild(pageButton);
+                }
+        
+                // Create and append 'Next' button
+                const nextButton = document.createElement('li');
+                nextButton.classList.add('page-item');
+                nextButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
+                if (currentPage === totalPages) {
+                    nextButton.classList.add('disabled');
+                }
+                paginationUL.appendChild(nextButton);
+
+                // Show number of contacts being displayed out of total contacts
+                const contactRows = document.querySelectorAll('.contact-row');
+                const totalContacts = contactRows.length;
+                const startIndex = (currentPage - 1) * contactsPerPage;
+                const endIndex = Math.min(startIndex + contactsPerPage, totalContacts);
+                const contactsInfo = document.createElement('div');
+                contactsInfo.classList.add('contacts-info');
+                contactsInfo.textContent = `Showing contacts ${startIndex + 1}-${endIndex} out of ${totalContacts}`;
+                paginationUL.appendChild(contactsInfo);
+        
+                paginationContainer.appendChild(paginationUL);
+        
+                // Add event listeners to page number links
+                paginationUL.querySelectorAll('a.page-link').forEach(link => {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        const pageNumber = parseInt(this.getAttribute('data-page'));
+                        if (!isNaN(pageNumber)) {
+                            currentPage = pageNumber;
+                            showContacts(currentPage);
+                            updatePaginationUI(currentPage, totalPages);
+                        }
+                    });
+                });
+            }
+        
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
@@ -134,49 +226,16 @@
                 });
             }
             
+            function calculateTotalPages() {
+                const totalContacts = document.querySelectorAll('.contact-row').length;
+                return Math.ceil(totalContacts / contactsPerPage);
+            }
             
-            const previousPageButton = document.getElementById("previousPageButton");
-    
-            // Event listener for the "Previous Page" button
-            previousPageButton.addEventListener("click", function(event) {
-                event.preventDefault(); // Prevent the default behavior of the button
-
-                if (currentPage > 1) {
-                    currentPage--;
-
-                    showContacts(currentPage);
-
-                    viewMoreButton.style.display = "block"; // Show the "Load More" button
-
-                    if (currentPage === 1) {
-                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
-                    }
-                }
-            });
-    
-            // Modify the 'viewMoreButton' event listener to handle pagination after applying filters
-            viewMoreButton.addEventListener("click", function(event) {
-                event.preventDefault();
-                const totalContacts = contacts.length; // Assuming 'contacts' is the list of filtered contacts
-                const totalPages = Math.ceil(totalContacts / contactsPerPage);
-    
-                if (currentPage < totalPages) {
-                    currentPage++;
-    
-                    showContacts(currentPage);
-    
-                    if (currentPage === totalPages) {
-                        viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
-                    }
-                } else {
-                    viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
-                }
-    
-                previousPageButton.style.display = 'block'; // Show the "Previous Page" button
-            });
-    
-            // Show contacts for the initial page (page 1)
+            // Initially show contacts for page 1 and update pagination UI
+            const totalPages = calculateTotalPages();
             showContacts(currentPage);
+            updatePaginationUI(currentPage, totalPages);
+
     
             const selectAllCheckbox = document.getElementById("selectAllCheckbox");
             const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
@@ -188,101 +247,70 @@
             });
 
             // Function to apply filters based on selected values
+            // Function to apply filters based on selected values
             function applyFilters() {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
-                const selectedLevel = $('#levelFilter').val(); // Get selected level value
-
-                let count = 0; // Counter for displayed rows
-                $('#contactTableBody tr').each(function() {
-                    if (count < 6) {
-                        const type = $(this).find('td:nth-child(7)').text().trim();
-                        const company = $(this).find('td:nth-child(6)').text().trim();
-                        const location = $(this).find('td:nth-child(8)').text().trim();
-                        const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
-
-                        // Show/hide rows based on filter criteria
-                        if (
-                            (selectedType === '' || type === selectedType) &&
-                            (selectedCompany === '' || company === selectedCompany) &&
-                            (selectedLocation === '' || location === selectedLocation) &&
-                            (selectedLevel === '' || level === selectedLevel) // Check level filter
-                        ) {
-                            $(this).show();
-                            count++;
-                        } else {
-                            $(this).hide();
-                        }
-                    } else {
-                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
-                    }
-                });
-
-                // Check if more rows exist with the selected filter value(s)
-                const filteredRowsWithFilter = $('#contactTableBody tr').filter(function() {
+                const selectedLevel = $('#levelFilter').val();
+                
+                currentPage = 1; // Reset to first page after filtering
+                
+                let visibleContacts = 0;
+                
+                $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-
-                    return (
+                
+                    const isVisible =
                         (selectedType === '' || type === selectedType) &&
                         (selectedCompany === '' || company === selectedCompany) &&
                         (selectedLocation === '' || location === selectedLocation) &&
-                        (selectedLevel === '' || level === selectedLevel)
-                    );
-                }).length;
+                        (selectedLevel === '' || level === selectedLevel);
+                
+                    if (isVisible) {
+                        $(this).show(); // Show the row if it matches the filter criteria
+                        visibleContacts++;
+                    } else {
+                        $(this).hide(); // Hide the row if it doesn't match the filter criteria
+                    }
+                });
+                
+                // Calculate total visible contacts after applying filters
+                const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
 
-                // Show Load More button if more rows with the selected filter value(s) are available
-                if (filteredRowsWithFilter > 6) {
-                    $('#viewMoreButton').show();
-                } else {
-                    $('#viewMoreButton').hide();
-                }
+                // Update contact info text based on the visible rows after filtering
+                const contactsInfo = document.querySelector('.contacts-info');
+                contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
+
+                // Reset search input value to an empty string to handle scenarios where filters are applied after a search
+                $('#searchInput').val('');
+                // Trigger input event to re-run search functionality after filtering
+                $('#searchInput').trigger('input');
             }
+
 
             // Apply Filters button
             $('#applyFilterButton').on('click', function(event) {
                 event.preventDefault();
-                applyFilters(); // Apply filters when the 'Apply Filters' button is clicked
+                applyFilters();
             });
 
-            function retrieveStoredContacts() {
-                const storedContactIds = sessionStorage.getItem('selectedContacts');
-                if (storedContactIds) {
-                    const contactIds = JSON.parse(storedContactIds);
-                    contactIds.forEach(contactId => {
-                        const checkbox = document.querySelector(`.contact-checkbox[value="${contactId}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                        }
-                    });
-                }
-            }
-            
-            function getStoredContactsQueryString() {
-                const storedContactIds = sessionStorage.getItem('selectedContacts');
-                if (storedContactIds) {
-                    const contactIds = JSON.parse(storedContactIds);
-                    return `?selected_contacts=${contactIds.join(',')}`;
-                }
-                return '';
-            }
-
-            // Function to dynamically generate dropdown items
+            // Function to populate dropdown items (Campaign dropdown)
             function populateCampaignDropdown(campaignNames) {
                 const dropdownMenu = document.querySelector('.dropdown-menu');
                 dropdownMenu.innerHTML = ''; // Clear existing items
-
+        
                 campaignNames.forEach(name => {
                     const newDropdownItem = document.createElement('a');
                     newDropdownItem.classList.add('dropdown-item');
                     newDropdownItem.textContent = name; // Set the name as text content (no need to set ID)
                     dropdownMenu.appendChild(newDropdownItem);
-
+        
                     // Add click event listener to handle adding contacts to the selected campaign
-                    newDropdownItem.addEventListener('click', function(event) {
+                    newDropdownItem.addEventListener('click', function (event) {
                         event.preventDefault();
                         const campaign = name; // Use the clicked campaign name
                         alert(`Adding contacts to ${campaign}, please wait`);
@@ -302,7 +330,6 @@
                     console.error('Error:', error);
                 });
 
-            // Function to handle adding contacts to a campaign
 
             function handleAddToCampaign(campaign) {
                 const selectedContacts = [];
@@ -379,13 +406,11 @@
                 return textContent;
             }
             
-            // Add click event listeners for dropdown items
+            // Reapply event listeners for dropdown items in the campaign dropdown
             document.querySelectorAll('.dropdown-item').forEach(item => {
                 item.addEventListener('click', function(event) {
                     event.preventDefault();
-                    const campaign = this.getAttribute('id');
-                
-                    // Handle adding contacts to the selected campaign
+                    const campaign = this.textContent; // Get the campaign name
                     alert(`Adding contacts to ${campaign}...`);
                     handleAddToCampaign(campaign);
                 });
@@ -408,6 +433,63 @@
                         if (openDropdown.classList.contains('show')) {
                             openDropdown.classList.remove('show');
                         }
+                    }
+                }
+            });
+
+            // Search Functionality
+            const searchInput = document.getElementById('searchInput');
+            const contactRows = document.querySelectorAll('.contact-row');
+            const contactsInfo = document.querySelector('.contacts-info');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                let visibleRowCount = 0;
+            
+                contactRows.forEach(row => {
+                    const firstName = row.querySelector('td:nth-child(2)').textContent.trim().toLowerCase();
+                    const lastName = row.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
+                    const email = row.querySelector('td:nth-child(4)').textContent.trim().toLowerCase();
+                    const title = row.querySelector('td:nth-child(5)').textContent.trim().toLowerCase();
+                    const company = row.querySelector('td:nth-child(6)').textContent.trim().toLowerCase();
+                    const type = row.querySelector('td:nth-child(7)').textContent.trim().toLowerCase();
+                    const location = row.querySelector('td:nth-child(8)').textContent.trim().toLowerCase();
+            
+                    const matchFound =
+                        firstName.includes(searchTerm) ||
+                        lastName.includes(searchTerm) ||
+                        email.includes(searchTerm) ||
+                        title.includes(searchTerm) ||
+                        company.includes(searchTerm) ||
+                        type.includes(searchTerm) ||
+                        location.includes(searchTerm);
+            
+                    if (matchFound) {
+                        if (visibleRowCount < contactsPerPage * currentPage) {
+                            row.style.display = ''; // Display the row if within the current page limit
+                            visibleRowCount++;
+                        } else {
+                            row.style.display = 'none'; // Hide the row if beyond the current page limit
+                        }
+                    } else {
+                        row.style.display = 'none'; // Hide rows not matching the search term
+                    }
+                });
+            
+                // Update the contact info text based on the visible rows after search
+                const totalVisibleContacts = document.querySelectorAll('.contact-row:not([style*="display: none"])').length;
+                contactsInfo.textContent = `Showing ${totalVisibleContacts} contact(s) out of ${contactRows.length}`;
+
+                // Update pagination when the search term is empty
+                if (searchTerm === '') {
+                    currentPage = 1; // Reset current page to 1
+                    showContacts(currentPage); // Show initial contacts for the first page
+                    const updatedTotalPages = Math.ceil(totalVisibleContacts / contactsPerPage);
+
+                    if (updatedTotalPages !== totalPages) {
+                        // Update pagination UI only if the total pages have changed
+                        totalPages = updatedTotalPages;
+                        updatePaginationUI(currentPage, totalPages); // Update pagination UI
                     }
                 }
             });
