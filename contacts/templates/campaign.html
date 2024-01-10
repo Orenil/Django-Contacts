@@ -225,19 +225,19 @@
             function updatePaginationUI(currentPage, totalPages) {
                 const paginationContainer = document.querySelector('.pagination-container');
                 paginationContainer.innerHTML = '';
-        
+            
                 const paginationUL = document.createElement('ul');
                 paginationUL.classList.add('pagination', 'justify-content-center');
-
+            
                 const startIndex = (currentPage - 1) * leadsPerPage + 1;
                 const endIndex = Math.min(startIndex + leadsPerPage - 1, leads.length);
                 const totalContacts = leads.length;
-
+            
                 const contactsRange = document.createElement('span');
                 contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
                 contactsRange.classList.add('contacts-range-info');
                 paginationContainer.appendChild(contactsRange);
-        
+            
                 const previousButton = document.createElement('li');
                 previousButton.classList.add('page-item');
                 previousButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
@@ -245,8 +245,12 @@
                     previousButton.classList.add('disabled');
                 }
                 paginationUL.appendChild(previousButton);
-        
-                for (let i = 1; i <= totalPages; i++) {
+            
+                const maxPageButtonsToShow = 5; // Adjust the number of page buttons to show
+                const startPage = Math.max(1, Math.min(currentPage - Math.floor(maxPageButtonsToShow / 2), totalPages - maxPageButtonsToShow + 1));
+                const endPage = Math.min(startPage + maxPageButtonsToShow - 1, totalPages);
+            
+                for (let i = startPage; i <= endPage; i++) {
                     const pageButton = document.createElement('li');
                     pageButton.classList.add('page-item');
                     pageButton.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
@@ -255,7 +259,7 @@
                     }
                     paginationUL.appendChild(pageButton);
                 }
-        
+            
                 const nextButton = document.createElement('li');
                 nextButton.classList.add('page-item');
                 nextButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
@@ -263,9 +267,9 @@
                     nextButton.classList.add('disabled');
                 }
                 paginationUL.appendChild(nextButton);
-        
+            
                 paginationContainer.appendChild(paginationUL);
-        
+            
                 paginationUL.querySelectorAll('a.page-link').forEach(link => {
                     link.addEventListener('click', function (event) {
                         event.preventDefault();
@@ -277,6 +281,7 @@
                         }
                     });
                 });
+            
                 // Disable previous and next buttons if there is only one page or fewer pages than the current page
                 if (totalPages <= 1 || currentPage >= totalPages) {
                     nextButton.classList.add('disabled');
