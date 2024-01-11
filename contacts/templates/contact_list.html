@@ -212,13 +212,10 @@
                 const totalContacts = contactRows.length;
                 const startIndex = (currentPage - 1) * contactsPerPage;
                 const endIndex = Math.min(startIndex + contactsPerPage, totalContacts);
-                const contactsInfoContainer = document.createElement('div');
-                contactsInfoContainer.classList.add('contacts-info-container');
                 const contactsInfo = document.createElement('div');
                 contactsInfo.classList.add('contacts-info');
                 contactsInfo.textContent = `Showing contacts ${startIndex + 1}-${endIndex} out of ${totalContacts}`;
-                contactsInfoContainer.appendChild(contactsInfo);
-                paginationUL.appendChild(contactsInfoContainer);
+                paginationUL.appendChild(contactsInfo);
             
                 paginationContainer.appendChild(paginationUL);
             
@@ -229,15 +226,18 @@
                         const pageNumber = parseInt(this.getAttribute('data-page'));
                         if (!isNaN(pageNumber)) {
                             applyFilters(pageNumber);
+                            currentPage = pageNumber;
+                            showContacts(currentPage);
+                            updatePaginationUI(currentPage, totalPages);
                         }
                     });
                 });
             }
-            
+        
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-            
+    
                 contacts.forEach((contact, index) => {
                     if (index >= startIndex && index < endIndex) {
                         contact.style.display = ""; // Display contacts within the current page range
@@ -256,56 +256,50 @@
             const totalPages = calculateTotalPages();
             showContacts(currentPage);
             updatePaginationUI(currentPage, totalPages);
-            
+
+    
             const selectAllCheckbox = document.getElementById("selectAllCheckbox");
             const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
-            
-            selectAllCheckbox.addEventListener("change", function () {
+    
+            selectAllCheckbox.addEventListener("change", function() {
                 contactCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCheckbox.checked;
                 });
             });
-            
+
+            // Function to apply filters based on selected values
             // Global variables to store filter criteria
             let globalSelectedType = '';
             let globalSelectedCompany = '';
             let globalSelectedLocation = '';
             let globalSelectedLevel = '';
-            
+
             function applyFilters(pageNumber) {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
-            
-                // Update global filter criteria only if the filters have changed
-                if (
-                    selectedType !== globalSelectedType ||
-                    selectedCompany !== globalSelectedCompany ||
-                    selectedLocation !== globalSelectedLocation ||
-                    selectedLevel !== globalSelectedLevel
-                ) {
-                    globalSelectedType = selectedType;
-                    globalSelectedCompany = selectedCompany;
-                    globalSelectedLocation = selectedLocation;
-                    globalSelectedLevel = selectedLevel;
-                }
-            
+
+                globalSelectedType = selectedType;
+                globalSelectedCompany = selectedCompany;
+                globalSelectedLocation = selectedLocation;
+                globalSelectedLevel = selectedLevel;
+
                 currentPage = pageNumber || 1;
                 let visibleContacts = 0;
-            
+
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-            
+
                     const isVisible =
                         (globalSelectedType === '' || type === globalSelectedType) &&
                         (globalSelectedCompany === '' || company === globalSelectedCompany) &&
                         (globalSelectedLocation === '' || location === globalSelectedLocation) &&
                         (globalSelectedLevel === '' || level === globalSelectedLevel);
-            
+
                     if (isVisible && visibleContacts < contactsPerPage) {
                         $(this).show();
                         visibleContacts++;
@@ -313,25 +307,24 @@
                         $(this).hide();
                     }
                 });
-            
+
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-            
+
                 const contactsInfo = document.querySelector('.contacts-info');
-                contactsInfo.textContent = `Showing ${visibleContacts} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-            
+                contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
+
                 $('#searchInput').val('');
                 $('#searchInput').trigger('input');
-            
+
                 const totalPages = calculateTotalPages();
                 updatePaginationUI(currentPage, totalPages);
             }
-            
+
             // Apply Filters button
             $('#applyFilterButton').on('click', function (event) {
                 event.preventDefault();
                 applyFilters();
             });
-            
 
             // Function to populate dropdown items (Campaign dropdown)
             function populateCampaignDropdown(campaignNames) {
