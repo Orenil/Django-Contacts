@@ -279,30 +279,30 @@
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
-
+            
                 // Update global filter criteria
                 globalSelectedType = selectedType;
                 globalSelectedCompany = selectedCompany;
                 globalSelectedLocation = selectedLocation;
                 globalSelectedLevel = selectedLevel;
-
+            
                 currentPage = 1; // Reset to first page after filtering
                 let visibleContacts = 0;
-
+            
                 // Iterate through all rows in the table
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-
+            
                     // Check if the row matches the global filter criteria
                     const isVisible =
                         (globalSelectedType === '' || type === globalSelectedType) &&
                         (globalSelectedCompany === '' || company === globalSelectedCompany) &&
                         (globalSelectedLocation === '' || location === globalSelectedLocation) &&
                         (globalSelectedLevel === '' || level === globalSelectedLevel);
-
+            
                     if (isVisible && visibleContacts < contactsPerPage) {
                         $(this).show();
                         visibleContacts++;
@@ -310,17 +310,18 @@
                         $(this).hide();
                     }
                 });
-
+            
                 // Update the pagination UI based on the filtered rows
-                updatePaginationUI(currentPage, totalPages);
-
+                const updatedTotalPages = calculateTotalPages();
+                updatePaginationUI(currentPage, updatedTotalPages);
+            
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-
+            
                 // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
                 contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-
+            
                 // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
                 // Trigger input event to re-run search functionality after filtering
@@ -333,6 +334,21 @@
                 applyFilters();
             });
             
+            $('#typeFilter, #companyFilter, #locationFilter, #levelFilter').on('change', function () {
+                applyFilters();
+            });
+            
+            // Add event listeners to pagination controls (Next and Previous buttons)
+            $('.pagination-container').on('click', 'a.page-link', function (event) {
+                event.preventDefault();
+                const pageNumber = parseInt($(this).attr('data-page'));
+                if (!isNaN(pageNumber)) {
+                    currentPage = pageNumber;
+                    showContacts(currentPage);
+                    updatePaginationUI(currentPage, calculateTotalPages());
+                }
+            });
+
             // Function to populate dropdown items (Campaign dropdown)
             function populateCampaignDropdown(campaignNames) {
                 const dropdownMenu = document.querySelector('.dropdown-menu');
