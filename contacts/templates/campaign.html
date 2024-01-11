@@ -713,9 +713,18 @@
             // Search functionality
             $('#searchInput').on('keyup', function() {
                 const searchText = $(this).val().toLowerCase();
-                $('#campaignEmailsTableBody tr').each(function() {
+                const $tableRows = $('#campaignEmailsTableBody tr');
+
+                $tableRows.each(function(index) {
                     const rowData = $(this).text().toLowerCase();
-                    if (rowData.includes(searchText)) {
+
+                    // Check if the row data contains the search text
+                    const isMatching = rowData.includes(searchText);
+
+                    // Determine if the row should be visible based on pagination
+                    const isVisible = isMatching && index >= (currentPage - 1) * leadsPerPage && index < currentPage * leadsPerPage;
+
+                    if (isVisible) {
                         $(this).show();
                     } else {
                         $(this).hide();
@@ -723,7 +732,7 @@
                 });
 
                 // Calculate total pages after filtering
-                const filteredRows = $('#campaignEmailsTableBody tr:visible');
+                const filteredRows = $tableRows.filter(':visible');
                 const totalFilteredRows = filteredRows.length;
                 const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
 
