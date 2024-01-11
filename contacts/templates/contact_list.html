@@ -236,26 +236,12 @@
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-                let visibleContacts = 0;
-            
-                $('#contactTableBody tr').each(function (index) {
-                    const type = $(this).find('td:nth-child(7)').text().trim();
-                    const company = $(this).find('td:nth-child(6)').text().trim();
-                    const location = $(this).find('td:nth-child(8)').text().trim();
-                    const level = $(this).find('td:nth-child(9)').text().trim();
-            
-                    // Check if the contact matches the global filter criteria
-                    const isVisible =
-                        (globalSelectedType === '' || type === globalSelectedType) &&
-                        (globalSelectedCompany === '' || company === globalSelectedCompany) &&
-                        (globalSelectedLocation === '' || location === globalSelectedLocation) &&
-                        (globalSelectedLevel === '' || level === globalSelectedLevel);
-            
-                    if (isVisible && index >= startIndex && index < endIndex) {
-                        $(this).show(); // Display contacts within the current page range and matching filter criteria
-                        visibleContacts++;
+    
+                contacts.forEach((contact, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        contact.style.display = ""; // Display contacts within the current page range
                     } else {
-                        $(this).hide(); // Hide contacts outside the current page range or not matching filter criteria
+                        contact.style.display = "none"; // Hide contacts outside the current page range
                     }
                 });
             }
@@ -300,7 +286,14 @@
                 globalSelectedLocation = selectedLocation;
                 globalSelectedLevel = selectedLevel;
 
-                currentPage = 1; // Reset to first page after filtering
+                // Reset to first page after filtering
+                currentPage = 1;
+
+                // Call a function to update the UI and display filtered contacts
+                updateFilteredContactsUI();
+            }
+
+            function updateFilteredContactsUI() {
                 let visibleContacts = 0;
 
                 // Iterate through all rows in the table
