@@ -246,14 +246,11 @@
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
             
-                let visibleContacts = 0;
-            
                 $('#contactTableBody tr').each(function (index) {
                     if (index >= startIndex && index < endIndex) {
                         $(this).show(); // Display contacts within the current page range
-                        visibleContacts++;
                     } else {
-                        $(this).hide(); // Hide contacts outside the current page range or not matching filters
+                        $(this).hide(); // Hide contacts outside the current page range
                     }
                 });
             
