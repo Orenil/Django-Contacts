@@ -250,6 +250,21 @@
                 const startPage = Math.max(1, Math.min(currentPage - Math.floor(maxPageButtonsToShow / 2), totalPages - maxPageButtonsToShow + 1));
                 const endPage = Math.min(startPage + maxPageButtonsToShow - 1, totalPages);
             
+                // Display "1" and add ellipsis if needed
+                const firstPageButton = document.createElement('li');
+                firstPageButton.classList.add('page-item');
+                firstPageButton.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
+                if (startPage > 2) {
+                    paginationUL.appendChild(firstPageButton);
+                    if (startPage > 3) {
+                        const ellipsis = document.createElement('li');
+                        ellipsis.classList.add('page-item', 'disabled');
+                        ellipsis.innerHTML = '<span class="page-link">...</span>';
+                        paginationUL.appendChild(ellipsis);
+                    }
+                }
+            
+                // Display page numbers within the range
                 for (let i = startPage; i <= endPage; i++) {
                     const pageButton = document.createElement('li');
                     pageButton.classList.add('page-item');
@@ -258,6 +273,20 @@
                         pageButton.classList.add('active');
                     }
                     paginationUL.appendChild(pageButton);
+                }
+            
+                // Display "Last" and add ellipsis if needed
+                const lastPageButton = document.createElement('li');
+                lastPageButton.classList.add('page-item');
+                lastPageButton.innerHTML = `<a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>`;
+                if (endPage < totalPages - 1) {
+                    if (endPage < totalPages - 2) {
+                        const ellipsis = document.createElement('li');
+                        ellipsis.classList.add('page-item', 'disabled');
+                        ellipsis.innerHTML = '<span class="page-link">...</span>';
+                        paginationUL.appendChild(ellipsis);
+                    }
+                    paginationUL.appendChild(lastPageButton);
                 }
             
                 const nextButton = document.createElement('li');
