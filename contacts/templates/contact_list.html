@@ -273,7 +273,6 @@
                 });
             });
 
-            // Function to apply filters based on selected values
             function applyFilters() {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
@@ -320,6 +319,7 @@
                 // Trigger input event to re-run search functionality after filtering
                 $('#searchInput').trigger('input');
             }
+
 
             // Apply Filters button
             $('#applyFilterButton').on('click', function(event) {
