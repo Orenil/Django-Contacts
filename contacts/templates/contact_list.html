@@ -272,38 +272,43 @@
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
-                
-                currentPage = 1; // Reset to first page after filtering
-                
+            
+                currentPage = 1; // Reset to the first page after filtering
+            
                 let visibleContacts = 0;
-                
+            
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-                
+            
                     const isVisible =
                         (selectedType === '' || type === selectedType) &&
                         (selectedCompany === '' || company === selectedCompany) &&
                         (selectedLocation === '' || location === selectedLocation) &&
                         (selectedLevel === '' || level === selectedLevel);
-                
+            
                     if (isVisible) {
-                        $(this).show(); // Show the row if it matches the filter criteria
+                        // Show the row only if it is within the current page range
+                        if (visibleContacts >= (currentPage - 1) * contactsPerPage && visibleContacts < currentPage * contactsPerPage) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
                         visibleContacts++;
                     } else {
                         $(this).hide(); // Hide the row if it doesn't match the filter criteria
                     }
                 });
-                
+            
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-
+            
                 // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
-                contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-
+                contactsInfo.textContent = `Showing ${Math.min(totalVisibleContactsAfterFilter, contactsPerPage)} contact(s) out of ${totalVisibleContactsAfterFilter}`;
+            
                 // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
                 // Trigger input event to re-run search functionality after filtering
