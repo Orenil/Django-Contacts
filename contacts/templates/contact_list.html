@@ -237,9 +237,9 @@
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-        
+            
                 let visibleContacts = 0;
-        
+            
                 $('#contactTableBody tr').each(function (index) {
                     if (index >= startIndex && index < endIndex) {
                         $(this).show(); // Display contacts within the current page range
@@ -248,6 +248,9 @@
                         $(this).hide(); // Hide contacts outside the current page range or not matching filters
                     }
                 });
+            
+                // Ensure that only the intended number of contacts per page is displayed
+                $('#contactTableBody tr:visible').slice(contactsPerPage).hide();
             }
             
             function calculateTotalPages() {
