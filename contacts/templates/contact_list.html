@@ -143,14 +143,6 @@
             const viewMoreButton = document.getElementById("viewMoreButton");
             const contactsPerPage = 50;
             let currentPage = 1;
-
-            // Define global object to store applied filters
-            let appliedFilters = {
-                type: '',
-                company: '',
-                location: '',
-                level: ''
-            };
     
             // Hide all contacts initially
             contacts.forEach((contact, index) => {
@@ -246,11 +238,14 @@
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
             
+                let visibleContacts = 0;
+            
                 $('#contactTableBody tr').each(function (index) {
                     if (index >= startIndex && index < endIndex) {
                         $(this).show(); // Display contacts within the current page range
+                        visibleContacts++;
                     } else {
-                        $(this).hide(); // Hide contacts outside the current page range
+                        $(this).hide(); // Hide contacts outside the current page range or not matching filters
                     }
                 });
             
@@ -280,28 +275,27 @@
 
             // Function to apply filters based on selected values
             function applyFilters() {
-                // Update global filters object
-                appliedFilters.type = $('#typeFilter').val();
-                appliedFilters.company = $('#companyFilter').val();
-                appliedFilters.location = $('#locationFilter').val();
-                appliedFilters.level = $('#levelFilter').val();
-
+                const selectedType = $('#typeFilter').val();
+                const selectedCompany = $('#companyFilter').val();
+                const selectedLocation = $('#locationFilter').val();
+                const selectedLevel = $('#levelFilter').val();
+            
                 currentPage = 1; // Reset to first page after filtering
-
+            
                 let visibleContacts = 0;
-
+            
                 $('#contactTableBody tr').each(function (index) {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-
+            
                     const isVisible =
-                        (appliedFilters.type === '' || type === appliedFilters.type) &&
-                        (appliedFilters.company === '' || company === appliedFilters.company) &&
-                        (appliedFilters.location === '' || location === appliedFilters.location) &&
-                        (appliedFilters.level === '' || level === appliedFilters.level);
-
+                        (selectedType === '' || type === selectedType) &&
+                        (selectedCompany === '' || company === selectedCompany) &&
+                        (selectedLocation === '' || location === selectedLocation) &&
+                        (selectedLevel === '' || level === selectedLevel);
+            
                     if (isVisible) {
                         if (visibleContacts >= (currentPage - 1) * contactsPerPage && visibleContacts < currentPage * contactsPerPage) {
                             $(this).show(); // Show the row if it matches the filter criteria and is within the current page range
@@ -313,14 +307,14 @@
                         $(this).hide(); // Hide the row if it doesn't match the filter criteria
                     }
                 });
-
+            
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-
+            
                 // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
                 contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-
+            
                 // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
                 // Trigger input event to re-run search functionality after filtering
