@@ -286,14 +286,7 @@
                 globalSelectedLocation = selectedLocation;
                 globalSelectedLevel = selectedLevel;
 
-                // Reset to first page after filtering
-                currentPage = 1;
-
-                // Call a function to update the UI and display filtered contacts
-                updateFilteredContactsUI();
-            }
-
-            function updateFilteredContactsUI() {
+                currentPage = 1; // Reset to first page after filtering
                 let visibleContacts = 0;
 
                 // Iterate through all rows in the table
@@ -317,6 +310,9 @@
                         $(this).hide();
                     }
                 });
+
+                // Update the pagination UI based on the filtered rows
+                updatePaginationUI(currentPage, totalPages);
 
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
