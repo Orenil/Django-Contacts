@@ -226,6 +226,7 @@
                         const pageNumber = parseInt(this.getAttribute('data-page'));
                         if (!isNaN(pageNumber)) {
                             currentPage = pageNumber;
+                            applyFilters();
                             showContacts(currentPage);
                             updatePaginationUI(currentPage, totalPages);
                         }
