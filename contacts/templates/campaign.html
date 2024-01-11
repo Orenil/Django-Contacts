@@ -710,43 +710,47 @@
                     // User clicked cancel, do nothing or perform additional action
                 }
             }
-           // Store the original rows
-            const originalRows = $('#campaignEmailsTableBody tr');
-
             // Search functionality
             $('#searchInput').on('keyup', function() {
                 const searchText = $(this).val().toLowerCase();
-                
-                // Use the original rows for filtering
-                originalRows.each(function() {
+                const visibleRows = [];
+
+                $('#campaignEmailsTableBody tr').each(function() {
                     const rowData = $(this).text().toLowerCase();
                     if (rowData.includes(searchText)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
+                        visibleRows.push(this);
                     }
                 });
 
                 // Calculate total pages after filtering
-                const filteredRows = $('#campaignEmailsTableBody tr:visible');
-                const totalFilteredRows = filteredRows.length;
+                const totalFilteredRows = visibleRows.length;
                 const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
 
                 // Reset pagination to the first page when search text is cleared
                 if (searchText === '') {
                     currentPage = 1;
-                    showLeads(currentPage); // Show the initial set of items per page
                 }
+
+                // Display a fixed number of items per page
+                const startIndex = (currentPage - 1) * leadsPerPage;
+                const endIndex = startIndex + leadsPerPage;
+                const rowsToShow = visibleRows.slice(startIndex, endIndex);
+
+                // Update the table rows
+                $('#campaignEmailsTableBody tr').hide();
+                $(rowsToShow).each(function () {
+                    $(this).show();
+                });
 
                 // Update pagination UI based on filtered rows
                 updatePaginationUI(currentPage, totalPages);
 
                 // Update the contacts range information
-                const startIndex = (currentPage - 1) * leadsPerPage + 1;
-                const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredRows);
-                const totalContacts = totalFilteredRows;
+                const updatedTotalRows = rowsToShow.length;
+                const updatedStartIndex = (currentPage - 1) * leadsPerPage + 1;
+                const updatedEndIndex = Math.min(updatedStartIndex + leadsPerPage - 1, totalFilteredRows);
                 const contactsRange = document.querySelector('.contacts-range-info');
-                contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
+                contactsRange.innerHTML = `Showing ${updatedStartIndex} - ${updatedEndIndex} of ${totalFilteredRows} leads`;
             });
         });
     </script>
