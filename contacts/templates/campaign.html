@@ -474,8 +474,10 @@
                 const totalPages = Math.ceil(totalFilteredLeads / leadsPerPage);
 
                 if (totalFilteredLeads > 0) {
-                    const startIndex = 1;
-                    const endIndex = Math.min(leadsPerPage, totalFilteredLeads);
+                    // Calculate the current start and end index based on the current page
+                    const currentPage = parseInt($('.pagination li.active a').attr('data-page'));
+                    const startIndex = (currentPage - 1) * leadsPerPage + 1;
+                    const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredLeads);
 
                     // Display the filtered leads within the current page range
                     const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
@@ -484,7 +486,7 @@
                     });
 
                     // Update the pagination UI based on the filtered rows
-                    updatePaginationUI(1, totalPages);
+                    updatePaginationUI(currentPage, totalPages);
 
                     // Update the contacts range information
                     const contactsRange = document.querySelector('.contacts-range-info');
