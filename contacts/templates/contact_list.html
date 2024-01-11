@@ -237,17 +237,15 @@
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-            
+        
                 let visibleContacts = 0;
-            
-                contacts.forEach((contact, index) => {
-                    const isVisible = index >= startIndex && index < endIndex && contact.style.display !== 'none';
-            
-                    if (isVisible && visibleContacts < contactsPerPage) {
-                        contact.style.display = ''; // Display contacts within the current page range
+        
+                $('#contactTableBody tr').each(function (index) {
+                    if (index >= startIndex && index < endIndex) {
+                        $(this).show(); // Display contacts within the current page range
                         visibleContacts++;
                     } else {
-                        contact.style.display = 'none'; // Hide contacts outside the current page range or not matching filters
+                        $(this).hide(); // Hide contacts outside the current page range or not matching filters
                     }
                 });
             }
@@ -273,85 +271,62 @@
             });
 
             // Function to apply filters based on selected values
-            // Global variables to store filter criteria
-            let globalSelectedType = '';
-            let globalSelectedCompany = '';
-            let globalSelectedLocation = '';
-            let globalSelectedLevel = '';
-
             function applyFilters() {
-                // Get filter criteria from the dropdowns
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
-            
-                // Update global filter criteria
-                globalSelectedType = selectedType;
-                globalSelectedCompany = selectedCompany;
-                globalSelectedLocation = selectedLocation;
-                globalSelectedLevel = selectedLevel;
-            
+                
                 currentPage = 1; // Reset to first page after filtering
-            
-                // Iterate through all rows in the table and filter
+                
                 let visibleContacts = 0;
+                
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-            
-                    // Check if the row matches the global filter criteria
+                
                     const isVisible =
-                        (globalSelectedType === '' || type === globalSelectedType) &&
-                        (globalSelectedCompany === '' || company === globalSelectedCompany) &&
-                        (globalSelectedLocation === '' || location === globalSelectedLocation) &&
-                        (globalSelectedLevel === '' || level === globalSelectedLevel);
-            
+                        (selectedType === '' || type === selectedType) &&
+                        (selectedCompany === '' || company === selectedCompany) &&
+                        (selectedLocation === '' || location === selectedLocation) &&
+                        (selectedLevel === '' || level === selectedLevel);
+                
                     if (isVisible) {
-                        if (visibleContacts < contactsPerPage) {
-                            $(this).show();
-                            visibleContacts++;
-                        } else {
-                            $(this).hide();
-                        }
+                        $(this).show(); // Show the row if it matches the filter criteria
+                        visibleContacts++;
                     } else {
-                        $(this).hide();
+                        $(this).hide(); // Hide the row if it doesn't match the filter criteria
                     }
                 });
-            
-                // Calculate total pages based on the filtered contacts
-                const updatedTotalPages = calculateTotalPages();
-            
-                // Update the pagination UI based on the filtered rows
-                updatePaginationUI(currentPage, updatedTotalPages);
-            
+                
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-            
+
                 // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
                 contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-            
+
                 // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
                 // Trigger input event to re-run search functionality after filtering
                 $('#searchInput').trigger('input');
             }
 
+
             // Apply Filters button
             $('#applyFilterButton').on('click', function(event) {
                 event.preventDefault();
                 applyFilters();
             });
-            
-            // Add event listeners to pagination controls (Next and Previous buttons)
+
             $('.pagination-container').on('click', 'a.page-link', function (event) {
                 event.preventDefault();
                 const pageNumber = parseInt($(this).attr('data-page'));
                 if (!isNaN(pageNumber)) {
                     currentPage = pageNumber;
+                    applyFilters();
                     showContacts(currentPage);
                     updatePaginationUI(currentPage, calculateTotalPages());
                 }
