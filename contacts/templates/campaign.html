@@ -710,21 +710,17 @@
                     // User clicked cancel, do nothing or perform additional action
                 }
             }
+           // Store the original rows
+            const originalRows = $('#campaignEmailsTableBody tr');
+
             // Search functionality
             $('#searchInput').on('keyup', function() {
                 const searchText = $(this).val().toLowerCase();
-                const $tableRows = $('#campaignEmailsTableBody tr');
-
-                $tableRows.each(function(index) {
+                
+                // Use the original rows for filtering
+                originalRows.each(function() {
                     const rowData = $(this).text().toLowerCase();
-
-                    // Check if the row data contains the search text
-                    const isMatching = rowData.includes(searchText);
-
-                    // Determine if the row should be visible based on pagination
-                    const isVisible = isMatching && index >= (currentPage - 1) * leadsPerPage && index < currentPage * leadsPerPage;
-
-                    if (isVisible) {
+                    if (rowData.includes(searchText)) {
                         $(this).show();
                     } else {
                         $(this).hide();
@@ -732,7 +728,7 @@
                 });
 
                 // Calculate total pages after filtering
-                const filteredRows = $tableRows.filter(':visible');
+                const filteredRows = $('#campaignEmailsTableBody tr:visible');
                 const totalFilteredRows = filteredRows.length;
                 const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
 
