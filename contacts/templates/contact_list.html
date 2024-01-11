@@ -226,6 +226,9 @@
                         const pageNumber = parseInt(this.getAttribute('data-page'));
                         if (!isNaN(pageNumber)) {
                             applyFilters(pageNumber);
+                            currentPage = pageNumber;
+                            showLeads(currentPage);
+                            updatePaginationUI(currentPage, totalPages);
                         }
                     });
                 });
