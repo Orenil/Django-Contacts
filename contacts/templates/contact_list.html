@@ -237,12 +237,17 @@
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-    
+            
+                let visibleContacts = 0;
+            
                 contacts.forEach((contact, index) => {
-                    if (index >= startIndex && index < endIndex) {
-                        contact.style.display = ""; // Display contacts within the current page range
+                    const isVisible = index >= startIndex && index < endIndex && contact.style.display !== 'none';
+            
+                    if (isVisible && visibleContacts < contactsPerPage) {
+                        contact.style.display = ''; // Display contacts within the current page range
+                        visibleContacts++;
                     } else {
-                        contact.style.display = "none"; // Hide contacts outside the current page range
+                        contact.style.display = 'none'; // Hide contacts outside the current page range or not matching filters
                     }
                 });
             }
@@ -338,10 +343,6 @@
             // Apply Filters button
             $('#applyFilterButton').on('click', function(event) {
                 event.preventDefault();
-                applyFilters();
-            });
-            
-            $('#typeFilter, #companyFilter, #locationFilter, #levelFilter').on('change', function () {
                 applyFilters();
             });
             
