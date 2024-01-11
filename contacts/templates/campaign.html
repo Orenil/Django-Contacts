@@ -390,19 +390,25 @@
 
             initEventListeners();
 
+            // Global variable to store the selected campaign
+            let globalSelectedCampaign = '';
+
             // Function to filter the campaign table based on the selected campaign
             function filterCampaignTable(campaignName) {
                 const visibleRows = [];
 
+                // Update the global selected campaign
+                globalSelectedCampaign = campaignName;
+
                 $('#campaignEmailsTableBody tr').each(function() {
                     const dataCampaign = $(this).attr('data-campaign');
-                    if (dataCampaign === campaignName) {
+                    if (dataCampaign === globalSelectedCampaign) {
                         visibleRows.push(this);
                     }
                 });
 
                 // Update the button text to the selected campaign
-                $('#viewCampaignDropdown').text(campaignName);
+                $('#viewCampaignDropdown').text(globalSelectedCampaign);
 
                 // Calculate total visible rows for the selected campaign
                 const totalFilteredRows = visibleRows.length;
@@ -458,55 +464,68 @@
                 updatePaginationUI(1, totalPages); // Assuming that after showing all campaigns, the pagination should start at page 1
             }
 
+            // Global variables to store filter criteria
+            let globalSelectedType = '';
+            let globalSelectedCompany = '';
+            let globalSelectedLocation = '';
+
             function applyFilters() {
+                // Get filter criteria from the dropdowns
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
-            
+
+                // Update global filter criteria
+                globalSelectedType = selectedType;
+                globalSelectedCompany = selectedCompany;
+                globalSelectedLocation = selectedLocation;
+
                 let filteredLeads = [];
-            
+
+                // Iterate through all rows in the table
                 $('#campaignEmailsTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(5)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
-            
+
+                    // Check if the row matches the global filter criteria
                     if (
-                        (selectedType === '' || type === selectedType) &&
-                        (selectedCompany === '' || company === selectedCompany) &&
-                        (selectedLocation === '' || location === selectedLocation)
+                        (globalSelectedType === '' || type === globalSelectedType) &&
+                        (globalSelectedCompany === '' || company === globalSelectedCompany) &&
+                        (globalSelectedLocation === '' || location === globalSelectedLocation)
                     ) {
                         filteredLeads.push(this);
                     }
                 });
-            
+
                 // Hide all rows in the table
                 $('#campaignEmailsTableBody tr').hide();
-            
+
                 const totalFilteredLeads = filteredLeads.length;
                 const totalPages = Math.ceil(totalFilteredLeads / leadsPerPage);
-            
+
                 if (totalFilteredLeads > 0) {
                     // Calculate the current start and end index based on the current page
                     const currentPage = parseInt($('.pagination li.active a').attr('data-page'));
                     const startIndex = (currentPage - 1) * leadsPerPage + 1;
                     const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredLeads);
-            
+
                     // Display the filtered leads within the current page range
                     const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
                     $(leadsToShow).each(function () {
                         $(this).show();
                     });
-            
+
                     // Update the pagination UI based on the filtered rows
                     updatePaginationUI(currentPage, totalPages);
-            
+
                     // Update the contacts range information based on filtered leads
                     const contactsRange = document.querySelector('.contacts-range-info');
                     contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalFilteredLeads} leads`;
                 } else {
                     // If no filtered leads, update pagination and contacts range for an empty result set
                     updatePaginationUI(1, 0);
-            
+
                     const contactsRange = document.querySelector('.contacts-range-info');
                     contactsRange.innerHTML = `No leads to display`;
                 }
