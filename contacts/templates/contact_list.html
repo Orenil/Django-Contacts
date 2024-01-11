@@ -287,9 +287,9 @@
                 globalSelectedLevel = selectedLevel;
             
                 currentPage = 1; // Reset to first page after filtering
-                let visibleContacts = 0;
             
-                // Iterate through all rows in the table
+                // Iterate through all rows in the table and filter
+                let visibleContacts = 0;
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
@@ -303,16 +303,22 @@
                         (globalSelectedLocation === '' || location === globalSelectedLocation) &&
                         (globalSelectedLevel === '' || level === globalSelectedLevel);
             
-                    if (isVisible && visibleContacts < contactsPerPage) {
-                        $(this).show();
-                        visibleContacts++;
+                    if (isVisible) {
+                        if (visibleContacts < contactsPerPage) {
+                            $(this).show();
+                            visibleContacts++;
+                        } else {
+                            $(this).hide();
+                        }
                     } else {
                         $(this).hide();
                     }
                 });
             
-                // Update the pagination UI based on the filtered rows
+                // Calculate total pages based on the filtered contacts
                 const updatedTotalPages = calculateTotalPages();
+            
+                // Update the pagination UI based on the filtered rows
                 updatePaginationUI(currentPage, updatedTotalPages);
             
                 // Calculate total visible contacts after applying filters
