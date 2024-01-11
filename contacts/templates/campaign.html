@@ -416,7 +416,7 @@
                 updatePaginationUI(1, totalPages); // Assuming that after showing all campaigns, the pagination should start at page 1
             }
 
-            // Apply Filters button
+            // Apply Filters button for the second table
             function applyFilters() {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
@@ -445,11 +445,11 @@
                 const totalPages = Math.ceil(totalFilteredLeads / leadsPerPage);
 
                 if (totalFilteredLeads > 0) {
-                    // Display the filtered leads for the first page
                     const startIndex = 1;
                     const endIndex = Math.min(leadsPerPage, totalFilteredLeads);
-                    const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
 
+                    // Display the filtered leads within the current page range
+                    const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
                     $(leadsToShow).each(function () {
                         $(this).show();
                     });
@@ -468,9 +468,9 @@
                     contactsRange.innerHTML = `No leads to display`;
                 }
             }
-            
-            // Apply Filters button
-            $('#applyFilterButton').on('click', function(event) {
+
+            // Apply Filters button for the second table
+            $('#applyFilterButton').on('click', function (event) {
                 event.preventDefault();
                 applyFilters(); // Apply filters when the 'Apply Filters' button is clicked
             });
