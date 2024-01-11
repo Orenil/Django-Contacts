@@ -154,12 +154,12 @@
             function updatePaginationUI(currentPage, totalPages) {
                 const paginationContainer = document.querySelector('.pagination-container');
                 paginationContainer.innerHTML = ''; // Clear existing pagination
-        
+            
                 const paginationUL = document.createElement('ul');
                 paginationUL.classList.add('pagination', 'justify-content-center');
-        
+            
                 const MAX_PAGES_DISPLAYED = 5;
-        
+            
                 // Create and append 'Previous' button
                 const previousButton = document.createElement('li');
                 previousButton.classList.add('page-item');
@@ -168,7 +168,7 @@
                     previousButton.classList.add('disabled');
                 }
                 paginationUL.appendChild(previousButton);
-        
+            
                 // Display page numbers with ellipses
                 for (let i = 1; i <= totalPages; i++) {
                     if (
@@ -197,7 +197,7 @@
                         paginationUL.appendChild(ellipsisItem);
                     }
                 }
-        
+            
                 // Create and append 'Next' button
                 const nextButton = document.createElement('li');
                 nextButton.classList.add('page-item');
@@ -206,7 +206,7 @@
                     nextButton.classList.add('disabled');
                 }
                 paginationUL.appendChild(nextButton);
-        
+            
                 // Show number of contacts being displayed out of total contacts
                 const contactRows = document.querySelectorAll('.contact-row');
                 const totalContacts = contactRows.length;
@@ -216,18 +216,16 @@
                 contactsInfo.classList.add('contacts-info');
                 contactsInfo.textContent = `Showing contacts ${startIndex + 1}-${endIndex} out of ${totalContacts}`;
                 paginationUL.appendChild(contactsInfo);
-        
+            
                 paginationContainer.appendChild(paginationUL);
-        
+            
                 // Add event listeners to page number links
                 paginationUL.querySelectorAll('a.page-link').forEach(link => {
                     link.addEventListener('click', function (event) {
                         event.preventDefault();
                         const pageNumber = parseInt(this.getAttribute('data-page'));
                         if (!isNaN(pageNumber)) {
-                            currentPage = pageNumber;
-                            showContacts(currentPage);
-                            updatePaginationUI(currentPage, totalPages);
+                            applyFilters(pageNumber);
                         }
                     });
                 });
@@ -236,7 +234,7 @@
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-        
+    
                 contacts.forEach((contact, index) => {
                     if (index >= startIndex && index < endIndex) {
                         contact.style.display = ""; // Display contacts within the current page range
@@ -245,12 +243,12 @@
                     }
                 });
             }
-        
+            
             function calculateTotalPages() {
                 const totalContacts = document.querySelectorAll('.contact-row').length;
                 return Math.ceil(totalContacts / contactsPerPage);
             }
-        
+            
             // Initially show contacts for page 1 and update pagination UI
             const totalPages = calculateTotalPages();
             showContacts(currentPage);
@@ -266,36 +264,33 @@
                 });
             });
 
+            // Function to apply filters based on selected values
             // Global variables to store filter criteria
             let globalSelectedType = '';
             let globalSelectedCompany = '';
             let globalSelectedLocation = '';
             let globalSelectedLevel = '';
 
-            function applyFilters() {
-                // Get filter criteria from the dropdowns
+            function applyFilters(pageNumber) {
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
 
-                // Update global filter criteria
                 globalSelectedType = selectedType;
                 globalSelectedCompany = selectedCompany;
                 globalSelectedLocation = selectedLocation;
                 globalSelectedLevel = selectedLevel;
 
-                currentPage = 1; // Reset to first page after filtering
+                currentPage = pageNumber || 1;
                 let visibleContacts = 0;
 
-                // Iterate through all rows in the table
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
 
-                    // Check if the row matches the global filter criteria
                     const isVisible =
                         (globalSelectedType === '' || type === globalSelectedType) &&
                         (globalSelectedCompany === '' || company === globalSelectedCompany) &&
@@ -310,22 +305,20 @@
                     }
                 });
 
-                // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
 
-                // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
                 contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
 
-                // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
-                // Trigger input event to re-run search functionality after filtering
                 $('#searchInput').trigger('input');
+
+                const totalPages = calculateTotalPages();
+                updatePaginationUI(currentPage, totalPages);
             }
 
-
             // Apply Filters button
-            $('#applyFilterButton').on('click', function(event) {
+            $('#applyFilterButton').on('click', function (event) {
                 event.preventDefault();
                 applyFilters();
             });
