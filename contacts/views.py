@@ -82,68 +82,19 @@ def contact_list(request):
     # Extract campaign names as a list
     campaign_names = list(user_campaigns.values_list('name', flat=True))
 
-    distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
-    distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
-    distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
-    distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
+    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
+    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
+    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
+    distinct_levels = Contact.objects.values_list('level', flat=True).distinct()
 
-    # Get all contacts
     contacts = Contact.objects.all()
-
-    # Apply search query
-    query = request.GET.get('q')
-    if query:
-        contacts = contacts.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(email__icontains=query) |
-            Q(title__icontains=query) |
-            Q(company__icontains=query) |
-            Q(type__icontains=query) |
-            Q(location__icontains=query) |
-            Q(level__icontains=query)
-        )
-
-    # Apply filters based on filter parameters
-    type_filter = request.GET.get('typeFilter')
-    company_filter = request.GET.get('companyFilter')
-    location_filter = request.GET.get('locationFilter')
-    level_filter = request.GET.get('levelFilter')
-
-    filter_conditions = Q()
-
-    if type_filter:
-        filter_conditions &= Q(type__icontains=type_filter)
-
-    if company_filter:
-        filter_conditions &= Q(company__icontains=company_filter)
-
-    if location_filter:
-        filter_conditions &= Q(location__icontains=location_filter)
-
-    if level_filter:
-        filter_conditions &= Q(level__icontains=level_filter)
-
-    contacts = contacts.filter(filter_conditions)
-        
-    # Pagination
-    paginator = Paginator(contacts, 50)  # Show 50 contacts per page
-    page = request.GET.get('page', 1)
-    try:
-        contacts = paginator.page(page)
-    except PageNotAnInteger:
-        contacts = paginator.page(1)
-    except EmptyPage:
-        contacts = paginator.page(paginator.num_pages)
-
     return render(request, 'contact_list.html', {
         'contacts': contacts,
         'distinct_types': distinct_types,
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
-        'campaign_names': campaign_names,
-        'query': query,  # Pass the query to the template for display
+        'campaign_names': campaign_names,  
     })
 
 @login_required
