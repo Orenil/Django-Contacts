@@ -148,24 +148,25 @@
                 });
             }
         
+            // Inside the event listener for the "Load more" button
             viewMoreButton.addEventListener("click", function(event) {
                 event.preventDefault();
                 const totalContacts = contacts.length;
                 const totalPages = Math.ceil(totalContacts / contactsPerPage);
-        
+
                 if (currentPage < totalPages) {
                     currentPage++;
-        
+
                     // Show the next set of contacts by appending them below the existing ones
                     const startIndex = (currentPage - 1) * contactsPerPage;
                     const endIndex = startIndex + contactsPerPage;
-        
+
                     contacts.forEach((contact, index) => {
                         if (index >= startIndex && index < endIndex) {
                             contact.style.display = ""; // Display the new contacts
                         }
                     });
-        
+
                     if (currentPage === totalPages) {
                         viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
                     }
@@ -173,6 +174,11 @@
                     viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
                 }
             });
+
+            // Check if there are less than 50 items on page load
+            if (contacts.length <= contactsPerPage) {
+                viewMoreButton.style.display = 'none'; // Hide the "Load more" button
+            }
         
             // Show contacts for the initial page (page 1)
             showContacts(currentPage);
