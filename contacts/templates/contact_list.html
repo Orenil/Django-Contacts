@@ -132,20 +132,13 @@
         document.addEventListener("DOMContentLoaded", function() {
             const contacts = document.querySelectorAll(".contact-row");
             const viewMoreButton = document.getElementById("viewMoreButton");
-            const contactsPerPage = 6;
+            const contactsPerPage = 50;
             let currentPage = 1;
-    
-            // Hide all contacts initially
-            contacts.forEach((contact, index) => {
-                if (index >= contactsPerPage) {
-                    contact.style.display = "none";
-                }
-            });
-    
+
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-    
+        
                 contacts.forEach((contact, index) => {
                     if (index >= startIndex && index < endIndex) {
                         contact.style.display = ""; // Display contacts within the current page range
@@ -154,48 +147,33 @@
                     }
                 });
             }
-            
-            
-            const previousPageButton = document.getElementById("previousPageButton");
-    
-            // Event listener for the "Previous Page" button
-            previousPageButton.addEventListener("click", function(event) {
-                event.preventDefault(); // Prevent the default behavior of the button
-
-                if (currentPage > 1) {
-                    currentPage--;
-
-                    showContacts(currentPage);
-
-                    viewMoreButton.style.display = "block"; // Show the "Load More" button
-
-                    if (currentPage === 1) {
-                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
-                    }
-                }
-            });
-    
-            // Modify the 'viewMoreButton' event listener to handle pagination after applying filters
+        
             viewMoreButton.addEventListener("click", function(event) {
                 event.preventDefault();
-                const totalContacts = contacts.length; // Assuming 'contacts' is the list of filtered contacts
+                const totalContacts = contacts.length;
                 const totalPages = Math.ceil(totalContacts / contactsPerPage);
-    
+        
                 if (currentPage < totalPages) {
                     currentPage++;
-    
-                    showContacts(currentPage);
-    
+        
+                    // Show the next set of contacts by appending them below the existing ones
+                    const startIndex = (currentPage - 1) * contactsPerPage;
+                    const endIndex = startIndex + contactsPerPage;
+        
+                    contacts.forEach((contact, index) => {
+                        if (index >= startIndex && index < endIndex) {
+                            contact.style.display = ""; // Display the new contacts
+                        }
+                    });
+        
                     if (currentPage === totalPages) {
                         viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
                     }
                 } else {
                     viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
                 }
-    
-                previousPageButton.style.display = 'block'; // Show the "Previous Page" button
             });
-    
+        
             // Show contacts for the initial page (page 1)
             showContacts(currentPage);
     
@@ -214,53 +192,25 @@
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val(); // Get selected level value
-
-                let count = 0; // Counter for displayed rows
+        
                 $('#contactTableBody tr').each(function() {
-                    if (count < 6) {
-                        const type = $(this).find('td:nth-child(7)').text().trim();
-                        const company = $(this).find('td:nth-child(6)').text().trim();
-                        const location = $(this).find('td:nth-child(8)').text().trim();
-                        const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
-
-                        // Show/hide rows based on filter criteria
-                        if (
-                            (selectedType === '' || type === selectedType) &&
-                            (selectedCompany === '' || company === selectedCompany) &&
-                            (selectedLocation === '' || location === selectedLocation) &&
-                            (selectedLevel === '' || level === selectedLevel) // Check level filter
-                        ) {
-                            $(this).show();
-                            count++;
-                        } else {
-                            $(this).hide();
-                        }
-                    } else {
-                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
-                    }
-                });
-
-                // Check if more rows exist with the selected filter value(s)
-                const filteredRowsWithFilter = $('#contactTableBody tr').filter(function() {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
-                    const level = $(this).find('td:nth-child(9)').text().trim();
-
-                    return (
+                    const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
+        
+                    // Show/hide rows based on filter criteria
+                    if (
                         (selectedType === '' || type === selectedType) &&
                         (selectedCompany === '' || company === selectedCompany) &&
                         (selectedLocation === '' || location === selectedLocation) &&
-                        (selectedLevel === '' || level === selectedLevel)
-                    );
-                }).length;
-
-                // Show Load More button if more rows with the selected filter value(s) are available
-                if (filteredRowsWithFilter > 6) {
-                    $('#viewMoreButton').show();
-                } else {
-                    $('#viewMoreButton').hide();
-                }
+                        (selectedLevel === '' || level === selectedLevel) // Check level filter
+                    ) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
             }
 
             // Apply Filters button
