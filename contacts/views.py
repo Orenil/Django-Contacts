@@ -73,7 +73,6 @@ def profile(request):
 def home(request):
     home = Contact.objects.all()
     return render(request, 'home.html')
-
 @login_required
 def contact_list(request):
     # Filter campaigns associated with the logged-in user
@@ -87,22 +86,8 @@ def contact_list(request):
     distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
     distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
 
-    # Get all contacts
+    # Get all contacts without applying search or filters
     contacts = Contact.objects.all()
-
-    # Apply search query
-    query = request.GET.get('q')
-    if query:
-        contacts = contacts.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(email__icontains=query) |
-            Q(title__icontains=query) |
-            Q(company__icontains=query) |
-            Q(type__icontains=query) |
-            Q(location__icontains=query) |
-            Q(level__icontains=query)
-        )
 
     # Apply filters based on filter parameters
     type_filter = request.GET.get('typeFilter')
@@ -125,7 +110,7 @@ def contact_list(request):
         filter_conditions &= Q(level__icontains=level_filter)
 
     contacts = contacts.filter(filter_conditions)
-        
+
     # Pagination
     paginator = Paginator(contacts, 50)  # Show 50 contacts per page
     page = request.GET.get('page', 1)
@@ -143,8 +128,27 @@ def contact_list(request):
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
         'campaign_names': campaign_names,
-        'query': query,  # Pass the query to the template for display
+        'query': None,  # No query for display in the template
     })
+
+@login_required
+def search_contacts(request):
+    query = request.GET.get('q')
+    contacts = Contact.objects.all()
+
+    if query:
+        contacts = contacts.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query) |
+            Q(title__icontains=query) |
+            Q(company__icontains=query) |
+            Q(type__icontains=query) |
+            Q(location__icontains=query) |
+            Q(level__icontains=query)
+        )
+
+    return render(request, 'contact_list.html', {'contacts': contacts, 'query': query})
 
 @login_required
 def get_campaign_names(request):
