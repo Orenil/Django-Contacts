@@ -87,52 +87,14 @@ def contact_list(request):
     distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
     distinct_levels = Contact.objects.values_list('level', flat=True).distinct()
 
-    # Get filter criteria from the request
-    selected_type = request.GET.get('typeFilter', '')
-    selected_company = request.GET.get('companyFilter', '')
-    selected_location = request.GET.get('locationFilter', '')
-    selected_level = request.GET.get('levelFilter', '')
-
-    # Apply filters to contacts
-    filtered_contacts = Contact.objects.all()
-
-    if selected_type:
-        filtered_contacts = filtered_contacts.filter(type=selected_type)
-    if selected_company:
-        filtered_contacts = filtered_contacts.filter(company=selected_company)
-    if selected_location:
-        filtered_contacts = filtered_contacts.filter(location=selected_location)
-    if selected_level:
-        filtered_contacts = filtered_contacts.filter(level=selected_level)
-
-    # Pagination
-    page = request.GET.get('page', 1)
-    contacts_per_page = 50
-    paginator = Paginator(filtered_contacts, contacts_per_page)
-
-    try:
-        contacts = paginator.page(page)
-    except PageNotAnInteger:
-        contacts = paginator.page(1)
-    except EmptyPage:
-        contacts = paginator.page(paginator.num_pages)
-
-    # Ajax response for pagination and updated contact list
-    if request.headers.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
-        contact_rows = render(request, 'contact_rows.html', {'contacts': contacts})
-        return JsonResponse({'html': contact_rows.content, 'has_next': contacts.has_next()})
-
+    contacts = Contact.objects.all()
     return render(request, 'contact_list.html', {
         'contacts': contacts,
         'distinct_types': distinct_types,
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
-        'campaign_names': campaign_names,
-        'selected_type': selected_type,
-        'selected_company': selected_company,
-        'selected_location': selected_location,
-        'selected_level': selected_level,
+        'campaign_names': campaign_names,  
     })
 
 @login_required
