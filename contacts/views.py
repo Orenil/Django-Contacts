@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm, CampaignEmailSearchForm
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -125,6 +125,16 @@ def contact_list(request):
         filter_conditions &= Q(level__icontains=level_filter)
 
     contacts = contacts.filter(filter_conditions)
+        
+    # Pagination
+    paginator = Paginator(contacts, 50)  # Show 50 contacts per page
+    page = request.GET.get('page', 1)
+    try:
+        contacts = paginator.page(page)
+    except PageNotAnInteger:
+        contacts = paginator.page(1)
+    except EmptyPage:
+        contacts = paginator.page(paginator.num_pages)
 
     return render(request, 'contact_list.html', {
         'contacts': contacts,
@@ -135,6 +145,7 @@ def contact_list(request):
         'campaign_names': campaign_names,
         'query': query,  # Pass the query to the template for display
     })
+
 
 @login_required
 def get_campaign_names(request):
@@ -363,67 +374,27 @@ def upload_to_campaign_view(request):
         except Exception as e:
             print('Error occurred during lead upload:', str(e))
             return HttpResponseServerError('Error occurred while processing the request.')
+
 @login_required
 def campaign_page(request):
     # Fetch campaigns associated with the logged-in user only
     user_campaigns = Campaign.objects.filter(user=request.user)
 
     # Fetch campaign emails for the campaigns associated with the logged-in user
-    campaign_emails = Campaign_Emails.objects.filter(
-        campaign_name__in=user_campaigns.values_list('name', flat=True)
-    ).order_by('campaign_name')
-
-    # Apply search query
-    query = request.GET.get('q')
-    if query:
-        campaign_emails = campaign_emails.filter(
-            Q(email__icontains=query) |
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(company__icontains=query) |
-            Q(type__icontains=query) |
-            Q(location__icontains=query) |
-            Q(title__icontains=query) |
-            Q(campaign_name__icontains=query)
-        )
-
-    # Apply filters based on filter parameters
-    type_filter = request.GET.get('typeFilter')
-    company_filter = request.GET.get('companyFilter')
-    location_filter = request.GET.get('locationFilter')
-
-    filter_conditions = Q()
-
-    if type_filter:
-        filter_conditions &= Q(type__icontains=type_filter)
-
-    if company_filter:
-        filter_conditions &= Q(company__icontains=company_filter)
-
-    if location_filter:
-        filter_conditions &= Q(location__icontains=location_filter)
-
-    campaign_emails = campaign_emails.filter(filter_conditions)
-
-    # Pagination
-    page = request.GET.get('page', 1)
-    paginator = Paginator(campaign_emails, 50)  # Show 10 campaign emails per page
-    try:
-        campaign_emails = paginator.page(page)
-    except PageNotAnInteger:
-        campaign_emails = paginator.page(1)
-    except EmptyPage:
-        campaign_emails = paginator.page(paginator.num_pages)
+    campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
 
     # Fetch distinct campaign names for filtering purposes
-    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
+    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct() 
+    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
+    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
+    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
 
     return render(request, 'campaign.html', {
         'campaign_emails': campaign_emails,
         'distinct_campaigns': distinct_campaigns,
-        'type_filter': type_filter,  # Pass the selected filter values to the template
-        'company_filter': company_filter,
-        'location_filter': location_filter,
+        'distinct_types': distinct_types,
+        'distinct_companies': distinct_companies,
+        'distinct_locations': distinct_locations
     })
 
 @csrf_exempt
