@@ -82,10 +82,10 @@ def contact_list(request):
     # Extract campaign names as a list
     campaign_names = list(user_campaigns.values_list('name', flat=True))
 
-    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
-    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
-    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
-    distinct_levels = Contact.objects.values_list('level', flat=True).distinct()
+    distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
+    distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
+    distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
+    distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
 
     # Get all contacts
     contacts = Contact.objects.all()
@@ -123,8 +123,8 @@ def contact_list(request):
         contacts = contacts.filter(level__icontains=level_filter)
         
     # Pagination
-    page = request.GET.get('page', 1)
     paginator = Paginator(contacts, 50)  # Show 50 contacts per page
+    page = request.GET.get('page', 1)
     try:
         contacts = paginator.page(page)
     except PageNotAnInteger:

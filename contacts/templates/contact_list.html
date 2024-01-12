@@ -38,28 +38,28 @@
         <!-- Filter Menu -->
         <div class="filter-menu float-right">
             <label for="typeFilter">Type:</label>
-            <select id="typeFilter">
+            <select id="typeFilter" name="typeFilter">
                 <option value="">All</option>
                 {% for type in distinct_types %}
                 <option value="{{ type }}">{{ type }}</option>
                 {% endfor %}
             </select>
             <label for="companyFilter">Company:</label>
-            <select id="companyFilter">
+            <select id="companyFilter" name="companyFilter">
                 <option value="">All</option>
                 {% for company in distinct_companies %}
                 <option value="{{ company }}">{{ company }}</option>
                 {% endfor %}
             </select>
             <label for="locationFilter">Location:</label>
-            <select id="locationFilter">
+            <select id="locationFilter" name="locationFilter">
                 <option value="">All</option>
                 {% for location in distinct_locations %}
                 <option value="{{ location }}">{{ location }}</option>
                 {% endfor %}
             </select>
             <label for="levelFilter">Level:</label>
-            <select id="levelFilter">
+            <select id="levelFilter" name="levelFilter">
                 <option value="">All</option>
                 {% for level in distinct_levels %}
                 <option value="{{ level }}">{{ level }}</option>
@@ -120,44 +120,43 @@
                 {% endfor %}
             </tbody>
         </table>
-
-        <!-- Pagination buttons -->
-        <nav aria-label="Page navigation">
-            <ul class="pagination justify-content-center">
-                {% if contacts.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1" aria-label="First">
-                            <span aria-hidden="true">&laquo;&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ contacts.previous_page_number }}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-
-                <li class="page-item disabled">
-                    <span class="page-link">
-                        Page {{ contacts.number }} of {{ contacts.paginator.num_pages }}.
-                    </span>
-                </li>
-
-                {% if contacts.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ contacts.next_page_number }}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ contacts.paginator.num_pages }}" aria-label="Last">
-                            <span aria-hidden="true">&raquo;&raquo;</span>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
     </form>
+    <!-- Pagination buttons -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if contacts.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Page {{ contacts.number }} of {{ contacts.paginator.num_pages }}.
+                </span>
+            </li>
+
+            {% if contacts.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
 </div>
 
     <script>
