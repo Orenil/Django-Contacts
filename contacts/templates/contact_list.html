@@ -123,6 +123,7 @@
 
         <div class="text-center">
             <button id="viewMoreButton" class="btn btn-primary">Load More</button>
+            <button id="previousPageButton" style="display: none;">Previous Page</button>
         </div>
     </form>
 </div>
@@ -133,11 +134,18 @@
             const viewMoreButton = document.getElementById("viewMoreButton");
             const contactsPerPage = 50;
             let currentPage = 1;
-
+    
+            // Hide all contacts initially
+            contacts.forEach((contact, index) => {
+                if (index >= contactsPerPage) {
+                    contact.style.display = "none";
+                }
+            });
+    
             function showContacts(pageNumber) {
                 const startIndex = (pageNumber - 1) * contactsPerPage;
                 const endIndex = startIndex + contactsPerPage;
-
+    
                 contacts.forEach((contact, index) => {
                     if (index >= startIndex && index < endIndex) {
                         contact.style.display = ""; // Display contacts within the current page range
@@ -146,41 +154,48 @@
                     }
                 });
             }
+            
+            
+            const previousPageButton = document.getElementById("previousPageButton");
+    
+            // Event listener for the "Previous Page" button
+            previousPageButton.addEventListener("click", function(event) {
+                event.preventDefault(); // Prevent the default behavior of the button
 
-            // Check if there are more than 50 items to load and show/hide the "Load more" button
-            if (contacts.length > contactsPerPage) {
-                viewMoreButton.style.display = 'block'; // Show the "Load more" button
-            } else {
-                viewMoreButton.style.display = 'none'; // Hide the "Load more" button
-            }
+                if (currentPage > 1) {
+                    currentPage--;
 
-            // Inside the event listener for the "Load more" button
+                    showContacts(currentPage);
+
+                    viewMoreButton.style.display = "block"; // Show the "Load More" button
+
+                    if (currentPage === 1) {
+                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
+                    }
+                }
+            });
+    
+            // Modify the 'viewMoreButton' event listener to handle pagination after applying filters
             viewMoreButton.addEventListener("click", function(event) {
                 event.preventDefault();
-                const totalContacts = contacts.length;
+                const totalContacts = contacts.length; // Assuming 'contacts' is the list of filtered contacts
                 const totalPages = Math.ceil(totalContacts / contactsPerPage);
-
+    
                 if (currentPage < totalPages) {
                     currentPage++;
-
-                    // Show the next set of contacts by appending them below the existing ones
-                    const startIndex = (currentPage - 1) * contactsPerPage;
-                    const endIndex = startIndex + contactsPerPage;
-
-                    contacts.forEach((contact, index) => {
-                        if (index >= startIndex && index < endIndex) {
-                            contact.style.display = ""; // Display the new contacts
-                        }
-                    });
-
+    
+                    showContacts(currentPage);
+    
                     if (currentPage === totalPages) {
                         viewMoreButton.style.display = 'none'; // Hide the "Load more" button when reaching the last page
                     }
                 } else {
                     viewMoreButton.style.display = 'none'; // Hide the "Load more" button if it's the last page or no more contacts
                 }
+    
+                previousPageButton.style.display = 'block'; // Show the "Previous Page" button
             });
-
+    
             // Show contacts for the initial page (page 1)
             showContacts(currentPage);
     
@@ -199,13 +214,14 @@
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val(); // Get selected level value
-        
-                $('#contactTableBody tr').each(function() {
+
+                let count = 0; // Counter for displayed rows
+                $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
-        
+
                     // Show/hide rows based on filter criteria
                     if (
                         (selectedType === '' || type === selectedType) &&
@@ -214,10 +230,18 @@
                         (selectedLevel === '' || level === selectedLevel) // Check level filter
                     ) {
                         $(this).show();
+                        count++;
                     } else {
                         $(this).hide();
                     }
                 });
+
+                // Show Load More button if more rows with the selected filter value(s) are available
+                if (count > 50) {
+                    $('#viewMoreButton').show();
+                } else {
+                    $('#viewMoreButton').hide();
+                }
             }
 
             // Apply Filters button
