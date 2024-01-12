@@ -39,3 +39,5 @@ class ProfileUpdateForm(forms.ModelForm):
         model = Profile
         fields = ['phone', 'image']
         
+class ContactSearchForm(forms.Form):
+    search_term = forms.CharField(required=False, max_length=100)

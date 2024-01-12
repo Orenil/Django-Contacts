@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.db.models import Count
+from django.db.models import Q
 from django.contrib.auth.models import User
 from .forms import UserRegisterForm
 from django.core.exceptions import ObjectDoesNotExist
@@ -85,14 +87,41 @@ def contact_list(request):
     distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
     distinct_levels = Contact.objects.values_list('level', flat=True).distinct()
 
+    # Get all contacts
     contacts = Contact.objects.all()
+
+    # Apply search query
+    query = request.GET.get('q')
+    if query:
+        contacts = contacts.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(email__icontains=query) |
+            Q(title__icontains=query) |
+            Q(company__icontains=query) |
+            Q(type__icontains=query) |
+            Q(location__icontains=query) |
+            Q(level__icontains=query)
+        )
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(contacts, 50)  # Show 10 contacts per page
+    try:
+        contacts = paginator.page(page)
+    except PageNotAnInteger:
+        contacts = paginator.page(1)
+    except EmptyPage:
+        contacts = paginator.page(paginator.num_pages)
+
     return render(request, 'contact_list.html', {
         'contacts': contacts,
         'distinct_types': distinct_types,
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
-        'campaign_names': campaign_names,  
+        'campaign_names': campaign_names,
+        'query': query,  # Pass the query to the template for display
     })
 
 @login_required
@@ -596,3 +625,4 @@ def get_campaign_status(request):
             return JsonResponse({'error': str(e)}, status=500, safe=False)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
