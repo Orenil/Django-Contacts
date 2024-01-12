@@ -41,3 +41,6 @@ class ProfileUpdateForm(forms.ModelForm):
         
 class ContactSearchForm(forms.Form):
     search_term = forms.CharField(required=False, max_length=100)
+    
+class CampaignEmailSearchForm(forms.Form):
+    search_query = forms.CharField(max_length=100, required=False)

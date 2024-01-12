@@ -15,12 +15,15 @@
         }
     </style>
 
-    <style>
-        .contacts-info {
-            margin-top: 10px; /* Adjust top margin */
-            /* You can add other margin or padding properties as needed */
-        }
-    </style>
+    <!-- Search Bar -->
+    <form class="form-inline" method="get" action="{% url 'campaign_page' %}">
+        <div class="input-group" style="width: 500px;"> <!-- Adjust the width as needed -->
+            <input type="text" class="form-control" name="q" id="q" placeholder="Search...">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
 
     <form method="post" action="{% url 'delete_selected_leads' %}">
         {% csrf_token %}
@@ -82,14 +85,6 @@
                     </table>
                 </div>
             </div>
-
-             <!-- Search Bar -->
-             <div class="row mb-3">
-                <div class="col-md-6 offset-md-3">
-                    <input type="text" id="searchInput" class="form-control" placeholder="Search...">
-                </div>
-            </div>
-            
             <!-- Filter Menu -->
             <div class="filter-menu float-right mt-3">
                 <label for="typeFilter">Type:</label>
@@ -166,15 +161,42 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- Pagination container -->
-                <div class="pagination-container">
-                    <ul class="pagination justify-content-center">
-                        <!-- Pagination will be dynamically generated here -->
-                    </ul>
-                </div>
             </div>
         </div>
     </form>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if campaign_emails.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if type_filter %}&typeFilter={{ type_filter }}{% endif %}{% if company_filter %}&companyFilter={{ company_filter }}{% endif %}{% if location_filter %}&locationFilter={{ location_filter }}{% endif %}&q={{ request.GET.q }}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ campaign_emails.previous_page_number }}{% if type_filter %}&typeFilter={{ type_filter }}{% endif %}{% if company_filter %}&companyFilter={{ company_filter }}{% endif %}{% if location_filter %}&locationFilter={{ location_filter }}{% endif %}&q={{ request.GET.q }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in campaign_emails.paginator.page_range %}
+                <li class="page-item{% if num == campaign_emails.number %} active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}{% if type_filter %}&typeFilter={{ type_filter }}{% endif %}{% if company_filter %}&companyFilter={{ company_filter }}{% endif %}{% if location_filter %}&locationFilter={{ location_filter }}{% endif %}&q={{ request.GET.q }}">{{ num }}</a>
+                </li>
+            {% endfor %}
+
+            {% if campaign_emails.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ campaign_emails.next_page_number }}{% if type_filter %}&typeFilter={{ type_filter }}{% endif %}{% if company_filter %}&companyFilter={{ company_filter }}{% endif %}{% if location_filter %}&locationFilter={{ location_filter }}{% endif %}&q={{ request.GET.q }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ campaign_emails.paginator.num_pages }}{% if type_filter %}&typeFilter={{ type_filter }}{% endif %}{% if company_filter %}&companyFilter={{ company_filter }}{% endif %}{% if location_filter %}&locationFilter={{ location_filter }}{% endif %}&q={{ request.GET.q }}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"></script>
@@ -196,7 +218,7 @@
         document.addEventListener("DOMContentLoaded", function() {
             const leads = document.querySelectorAll(".rowCheckbox");
             const viewMoreButton = document.getElementById("loadMoreButton");
-            const leadsPerPage = 50;
+            const leadsPerPage = 6;
             let currentPage = 1;
         
             function hideAllLeads() {
@@ -215,135 +237,82 @@
         
                 leads.forEach((lead, index) => {
                     if (index >= startIndex && index < endIndex) {
-                        lead.closest('tr').style.display = "";
+                        lead.closest('tr').style.display = ""; 
                     } else {
-                        lead.closest('tr').style.display = "none";
+                        lead.closest('tr').style.display = "none"; 
                     }
                 });
             }
+
+            const previousPageButton = document.getElementById("previousPageButton");
+
+            // Event listener for the "Previous Page" button
+            previousPageButton.addEventListener("click", function() {
+                event.preventDefault(); // Prevent the default action
+
+                if (currentPage > 1) {
+                    currentPage--;
+
+                    showLeads(currentPage);
+
+                    viewMoreButton.style.display = "block"; // Show the "Load More" button
+                    if (currentPage === 1) {
+                        previousPageButton.style.display = "none"; // Hide the "Previous Page" button when on the first page
+                    }
+                }
+            });
         
-            function updatePaginationUI(currentPage, totalPages) {
-                const paginationContainer = document.querySelector('.pagination-container');
-                paginationContainer.innerHTML = '';
-            
-                const paginationUL = document.createElement('ul');
-                paginationUL.classList.add('pagination', 'justify-content-center');
-            
-                const startIndex = (currentPage - 1) * leadsPerPage + 1;
-                const endIndex = Math.min(startIndex + leadsPerPage - 1, leads.length);
-                const totalContacts = leads.length;
-            
-                const contactsRange = document.createElement('span');
-                contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalContacts} leads`;
-                contactsRange.classList.add('contacts-range-info');
-                paginationContainer.appendChild(contactsRange);
-            
-                const previousButton = document.createElement('li');
-                previousButton.classList.add('page-item');
-                previousButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
-                if (currentPage === 1) {
-                    previousButton.classList.add('disabled');
-                }
-                paginationUL.appendChild(previousButton);
-            
-                const maxPageButtonsToShow = 5; // Adjust the number of page buttons to show
-                const startPage = Math.max(1, Math.min(currentPage - Math.floor(maxPageButtonsToShow / 2), totalPages - maxPageButtonsToShow + 1));
-                const endPage = Math.min(startPage + maxPageButtonsToShow - 1, totalPages);
-            
-                // Display "1" and add ellipsis if needed
-                const firstPageButton = document.createElement('li');
-                firstPageButton.classList.add('page-item');
-                firstPageButton.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
-                if (startPage > 2) {
-                    paginationUL.appendChild(firstPageButton);
-                    if (startPage > 3) {
-                        const ellipsis = document.createElement('li');
-                        ellipsis.classList.add('page-item', 'disabled');
-                        ellipsis.innerHTML = '<span class="page-link">...</span>';
-                        paginationUL.appendChild(ellipsis);
-                    }
-                }
-            
-                // Display page numbers within the range
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageButton = document.createElement('li');
-                    pageButton.classList.add('page-item');
-                    pageButton.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
-                    if (i === currentPage) {
-                        pageButton.classList.add('active');
-                    }
-                    paginationUL.appendChild(pageButton);
-                }
-            
-                // Display "Last" and add ellipsis if needed
-                const lastPageButton = document.createElement('li');
-                lastPageButton.classList.add('page-item');
-                lastPageButton.innerHTML = `<a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>`;
-                if (endPage < totalPages - 1) {
-                    if (endPage < totalPages - 2) {
-                        const ellipsis = document.createElement('li');
-                        ellipsis.classList.add('page-item', 'disabled');
-                        ellipsis.innerHTML = '<span class="page-link">...</span>';
-                        paginationUL.appendChild(ellipsis);
-                    }
-                    paginationUL.appendChild(lastPageButton);
-                }
-            
-                const nextButton = document.createElement('li');
-                nextButton.classList.add('page-item');
-                nextButton.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
-                if (currentPage === totalPages) {
-                    nextButton.classList.add('disabled');
-                }
-                paginationUL.appendChild(nextButton);
-            
-                paginationContainer.appendChild(paginationUL);
-            
-                paginationUL.querySelectorAll('a.page-link').forEach(link => {
-                    link.addEventListener('click', function (event) {
-                        event.preventDefault();
-                        const pageNumber = parseInt(this.getAttribute('data-page'));
-                        if (!isNaN(pageNumber)) {
-                            currentPage = pageNumber;
-                            showLeads(currentPage);
-                            updatePaginationUI(currentPage, totalPages);
-                        }
-                    });
-                });
-            
-                // Disable previous and next buttons if there is only one page or fewer pages than the current page
-                if (totalPages <= 1 || currentPage >= totalPages) {
-                    nextButton.classList.add('disabled');
-                }
-                if (currentPage <= 1) {
-                    previousButton.classList.add('disabled');
-                }
-            }
-        
-            function calculateTotalPages() {
+            // Modify the 'viewMoreButton' event listener to show the "Previous Page" button when navigating to the next page
+            viewMoreButton.addEventListener("click", function(event) {
+                event.preventDefault(); // Prevent the default action
+
+                currentPage++;
                 const totalLeads = leads.length;
-                return Math.ceil(totalLeads / leadsPerPage);
-            }
-        
-            const totalPages = calculateTotalPages();
-            hideAllLeads();
-            showLeads(currentPage);
-            updatePaginationUI(currentPage, totalPages);        
+                const totalPages = Math.ceil(totalLeads / leadsPerPage);
+
+                if (currentPage <= totalPages) {
+                    showLeads(currentPage);
+
+                    if (currentPage === totalPages) {
+                        viewMoreButton.style.display = "none"; // Hide button when reaching the last page
+                    }
+
+                    previousPageButton.style.display = "block"; // Show the "Previous Page" button
+                }
+            });
+
+            const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+            // Event listener for the "Select All" checkbox
+            selectAllCheckbox.addEventListener('change', function() {
+                rowCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+            })
             
 
             function initEventListeners() {
 
                 function showLimitedItemsInViewCampaignDropdown() {
                     const dropdownItems = $('[aria-labelledby="viewCampaignDropdown"] .view-campaign');
-                    const itemsToShow = 50;
-                
-                    dropdownItems.each(function (index) {
+                    const itemsToShow = 6;
+            
+                    dropdownItems.each(function(index) {
                         if (index < itemsToShow) {
                             $(this).show();
                         } else {
                             $(this).hide();
                         }
                     });
+            
+                    // Show/hide Load More button based on the number of items displayed
+                    const visibleItems = dropdownItems.filter(':visible').length;
+                    if (visibleItems <= itemsToShow) {
+                        $('#loadMoreButton').hide();
+                    } else {
+                        $('#loadMoreButton').show();
+                    }
                 }
             
                 // Event listener for the dropdown to toggle the visibility of items
@@ -390,149 +359,99 @@
 
             initEventListeners();
 
-            // Global variable to store the selected campaign
-            let globalSelectedCampaign = '';
-
             // Function to filter the campaign table based on the selected campaign
             function filterCampaignTable(campaignName) {
-                const visibleRows = [];
-
-                // Update the global selected campaign
-                globalSelectedCampaign = campaignName;
-
                 $('#campaignEmailsTableBody tr').each(function() {
                     const dataCampaign = $(this).attr('data-campaign');
-                    if (dataCampaign === globalSelectedCampaign) {
-                        visibleRows.push(this);
+                    if (dataCampaign === campaignName) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
                     }
                 });
 
                 // Update the button text to the selected campaign
-                $('#viewCampaignDropdown').text(globalSelectedCampaign);
-
-                // Calculate total visible rows for the selected campaign
-                const totalFilteredRows = visibleRows.length;
-                const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
-
-                // Reset pagination to the first page
-                currentPage = 1;
-
-                // Display a fixed number of items per page
-                const startIndex = (currentPage - 1) * leadsPerPage;
-                const endIndex = startIndex + leadsPerPage;
-                const rowsToShow = visibleRows.slice(startIndex, endIndex);
-
-                // Update the table rows
-                $('#campaignEmailsTableBody tr').hide();
-                $(rowsToShow).each(function () {
-                    $(this).show();
-                });
-
-                // Update pagination UI based on the filtered rows
-                updatePaginationUI(currentPage, totalPages);
-
-                // Update the contacts range information
-                const updatedTotalRows = rowsToShow.length;
-                const updatedStartIndex = (currentPage - 1) * leadsPerPage + 1;
-                const updatedEndIndex = Math.min(updatedStartIndex + leadsPerPage - 1, totalFilteredRows);
-                const contactsRange = document.querySelector('.contacts-range-info');
-                contactsRange.innerHTML = `Showing ${updatedStartIndex} - ${updatedEndIndex} of ${totalFilteredRows} leads`;
+                $('#viewCampaignDropdown').text(campaignName);
             }
 
             // Function to display all campaigns in the table
             function viewAllCampaigns() {
                 const campaignTableBody = $('#campaignEmailsTableBody');
-                const maxItems = 50;
+                const maxItems = 6;
                 const tableRows = campaignTableBody.find('tr');
-                
+            
                 // Show the first six rows and hide the rest
                 tableRows.hide();
-                
+            
                 for (let i = 0; i < maxItems; i++) {
                     $(tableRows[i]).show(); // Show the first six rows
                 }
-                
+            
                 const totalHiddenItems = tableRows.length - maxItems;
-                
+            
+                // Show "Load More" button if there are more items to display
+                if (totalHiddenItems > 0) {
+                    $('#loadMoreButton').show();
+                } else {
+                    $('#loadMoreButton').hide();
+                }
+            
                 // Reset dropdown text to default
                 $('#viewCampaignDropdown').text('View Specific Campaign');
-
-                // Calculate total pages after displaying all campaigns
-                const totalPages = Math.ceil(tableRows.length / maxItems);
-
-                // Update pagination UI after displaying all campaigns
-                updatePaginationUI(1, totalPages); // Assuming that after showing all campaigns, the pagination should start at page 1
             }
 
-            // Global variables to store filter criteria
-            let globalSelectedType = '';
-            let globalSelectedCompany = '';
-            let globalSelectedLocation = '';
-
+            //Function to apply filters in the table
             function applyFilters() {
-                // Get filter criteria from the dropdowns
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
-
-                // Update global filter criteria
-                globalSelectedType = selectedType;
-                globalSelectedCompany = selectedCompany;
-                globalSelectedLocation = selectedLocation;
-
-                let filteredLeads = [];
-
-                // Iterate through all rows in the table
-                $('#campaignEmailsTableBody tr').each(function () {
+            
+                let count = 0; // Counter for displayed rows
+                $('#campaignEmailsTableBody tr').each(function() {
+                    if (count < 6) {
+                        const type = $(this).find('td:nth-child(7)').text().trim();
+                        const company = $(this).find('td:nth-child(5)').text().trim();
+                        const location = $(this).find('td:nth-child(8)').text().trim();
+            
+                        // Show/hide rows based on filter criteria
+                        if (
+                            (selectedType === '' || type === selectedType) &&
+                            (selectedCompany === '' || company === selectedCompany) &&
+                            (selectedLocation === '' || location === selectedLocation)
+                        ) {
+                            $(this).show();
+                            count++;
+                        } else {
+                            $(this).hide();
+                        }
+                    } else {
+                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
+                    }
+                });
+            
+                // Check if more rows exist with the selected filter value(s)
+                const filteredRowsWithFilter = $('#campaignEmailsTableBody tr').filter(function() {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(5)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
-
-                    // Check if the row matches the global filter criteria
-                    if (
-                        (globalSelectedType === '' || type === globalSelectedType) &&
-                        (globalSelectedCompany === '' || company === globalSelectedCompany) &&
-                        (globalSelectedLocation === '' || location === globalSelectedLocation)
-                    ) {
-                        filteredLeads.push(this);
-                    }
-                });
-
-                // Hide all rows in the table
-                $('#campaignEmailsTableBody tr').hide();
-
-                const totalFilteredLeads = filteredLeads.length;
-                const totalPages = Math.ceil(totalFilteredLeads / leadsPerPage);
-
-                if (totalFilteredLeads > 0) {
-                    // Calculate the current start and end index based on the current page
-                    const currentPage = parseInt($('.pagination li.active a').attr('data-page'));
-                    const startIndex = (currentPage - 1) * leadsPerPage + 1;
-                    const endIndex = Math.min(startIndex + leadsPerPage - 1, totalFilteredLeads);
-
-                    // Display the filtered leads within the current page range
-                    const leadsToShow = filteredLeads.slice(startIndex - 1, endIndex);
-                    $(leadsToShow).each(function () {
-                        $(this).show();
-                    });
-
-                    // Update the pagination UI based on the filtered rows
-                    updatePaginationUI(currentPage, totalPages);
-
-                    // Update the contacts range information based on filtered leads
-                    const contactsRange = document.querySelector('.contacts-range-info');
-                    contactsRange.innerHTML = `Showing ${startIndex} - ${endIndex} of ${totalFilteredLeads} leads`;
+            
+                    return (
+                        (selectedType === '' || type === selectedType) &&
+                        (selectedCompany === '' || company === selectedCompany) &&
+                        (selectedLocation === '' || location === selectedLocation)
+                    );
+                }).length;
+            
+                // Show Load More button if more rows with the selected filter value(s) are available
+                if (filteredRowsWithFilter > 6) {
+                    $('#loadMoreButton').show();
                 } else {
-                    // If no filtered leads, update pagination and contacts range for an empty result set
-                    updatePaginationUI(1, 0);
-
-                    const contactsRange = document.querySelector('.contacts-range-info');
-                    contactsRange.innerHTML = `No leads to display`;
+                    $('#loadMoreButton').hide();
                 }
             }
-
-            // Apply Filters button for the second table
-            $('#applyFilterButton').on('click', function (event) {
+            
+            // Apply Filters button
+            $('#applyFilterButton').on('click', function(event) {
                 event.preventDefault();
                 applyFilters(); // Apply filters when the 'Apply Filters' button is clicked
             });
@@ -743,46 +662,28 @@
                 }
             }
             // Search functionality
-            $('#searchInput').on('keyup', function() {
-                const searchText = $(this).val().toLowerCase();
-                const visibleRows = [];
-
-                $('#campaignEmailsTableBody tr').each(function() {
-                    const rowData = $(this).text().toLowerCase();
+            $('#searchInput').on('keyup', function () {
+                const searchText = $(this).val().toLowerCase(); // Get the value entered in the search input
+                $('#campaignEmailsTableBody tr').each(function () {
+                    // Iterate through each table row
+                    const rowData = $(this).text().toLowerCase(); // Get the text content of the row in lowercase
                     if (rowData.includes(searchText)) {
-                        visibleRows.push(this);
+                        $(this).show(); // If the row contains the search text, show it
+                    } else {
+                        $(this).hide(); // Otherwise, hide the row
                     }
                 });
-
-                // Calculate total pages after filtering
-                const totalFilteredRows = visibleRows.length;
-                const totalPages = Math.ceil(totalFilteredRows / leadsPerPage);
-
-                // Reset pagination to the first page when search text is cleared
+                // Check if the search input is empty
                 if (searchText === '') {
-                    currentPage = 1;
+                    // If the search input is empty, hide all rows except the initial six
+                    $('#campaignEmailsTableBody tr').each(function (index) {
+                        if (index >= 6) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
+                    });
                 }
-
-                // Display a fixed number of items per page
-                const startIndex = (currentPage - 1) * leadsPerPage;
-                const endIndex = startIndex + leadsPerPage;
-                const rowsToShow = visibleRows.slice(startIndex, endIndex);
-
-                // Update the table rows
-                $('#campaignEmailsTableBody tr').hide();
-                $(rowsToShow).each(function () {
-                    $(this).show();
-                });
-
-                // Update pagination UI based on filtered rows
-                updatePaginationUI(currentPage, totalPages);
-
-                // Update the contacts range information
-                const updatedTotalRows = rowsToShow.length;
-                const updatedStartIndex = (currentPage - 1) * leadsPerPage + 1;
-                const updatedEndIndex = Math.min(updatedStartIndex + leadsPerPage - 1, totalFilteredRows);
-                const contactsRange = document.querySelector('.contacts-range-info');
-                contactsRange.innerHTML = `Showing ${updatedStartIndex} - ${updatedEndIndex} of ${totalFilteredRows} leads`;
             });
         });
     </script>
