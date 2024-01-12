@@ -86,14 +86,14 @@
                             </div>
                         </div>
                     </th>
-                    <th scope="col">First Name</th>
-                    <th scope="col">Last Name</th>
+                    <th scope="col" style="width: 10%;">First Name</th>
+                    <th scope="col" style="width: 10%;">Last Name</th>
                     <th scope="col">Email</th>
-                    <th scope="col">Title</th>
-                    <th scope="col">Company</th>
-                    <th scope="col">Type</th>
+                    <th scope="col" style="width: 15%;">Title</th>
+                    <th scope="col" style="width: 15%;">Company</th>
+                    <th scope="col" style="width: 10%;">Type</th>
                     <th scope="col">Location</th>
-                    <th scope="col">Level</th>
+                    <th scope="col" style="width: 10%;">Level</th>
                 </tr>
             </thead>
             <tbody id="contactTableBody">
@@ -108,14 +108,14 @@
                             </div>
                         </div>
                     </td>
-                    <td>{{ contact.first_name }}</td>
-                    <td>{{ contact.last_name }}</td>
+                    <td style="width: 10%;">{{ contact.first_name }}</td>
+                    <td style="width: 10%;">{{ contact.last_name }}</td>
                     <td>{{ contact.email }}</td>
-                    <td>{{ contact.title }}</td>
-                    <td>{{ contact.company }}</td>
-                    <td>{{ contact.type }}</td>
+                    <td style="width: 15%;">{{ contact.title }}</td>
+                    <td style="width: 15%;">{{ contact.company }}</td>
+                    <td style="width: 10%;">{{ contact.type }}</td>
                     <td>{{ contact.location }}</td>
-                    <td>{{ contact.level }}</td>
+                    <td style="width: 10%;">{{ contact.level }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -325,6 +325,7 @@
                     }
                 }
             });
+
         });
     </script>
 {% endblock %}
