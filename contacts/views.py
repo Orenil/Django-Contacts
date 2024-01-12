@@ -118,7 +118,7 @@ def contact_list(request):
         contacts = paginator.page(paginator.num_pages)
 
     # Ajax response for pagination and updated contact list
-    if request.is_ajax():
+    if request.headers.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest':
         contact_rows = render(request, 'contact_rows.html', {'contacts': contacts})
         return JsonResponse({'html': contact_rows.content, 'has_next': contacts.has_next()})
 
