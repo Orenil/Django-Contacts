@@ -105,10 +105,10 @@ def contact_list(request):
         )
 
     # Apply filters based on filter parameters
-    type_filter = request.GET.get('typeFilter')
-    company_filter = request.GET.get('companyFilter')
-    location_filter = request.GET.get('locationFilter')
-    level_filter = request.GET.get('levelFilter')
+    type_filter = request.GET.get('typeFilter', request.session.get('typeFilter'))
+    company_filter = request.GET.get('companyFilter', request.session.get('companyFilter'))
+    location_filter = request.GET.get('locationFilter', request.session.get('locationFilter'))
+    level_filter = request.GET.get('levelFilter', request.session.get('levelFilter'))
 
     filter_conditions = Q()
 
@@ -125,7 +125,13 @@ def contact_list(request):
         filter_conditions &= Q(level__icontains=level_filter)
 
     contacts = contacts.filter(filter_conditions)
-        
+
+    # Store filter parameters in session
+    request.session['typeFilter'] = type_filter
+    request.session['companyFilter'] = company_filter
+    request.session['locationFilter'] = location_filter
+    request.session['levelFilter'] = level_filter
+
     # Pagination
     paginator = Paginator(contacts, 50)  # Show 50 contacts per page
     page = request.GET.get('page', 1)

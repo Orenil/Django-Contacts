@@ -15,13 +15,14 @@
             /* You can add other margin or padding properties as needed */
         }
     </style>
-    <!-- Search Bar -->
-    <div class="row mb-3">
-        <div class="col-md-6 offset-md-3">
-            <input type="text" id="searchInput" class="form-control" placeholder="Search...">
+    <form class="form-inline" method="get" action="{% url 'contact-list' %}">
+        <div class="input-group" style="width: 500px;"> <!-- Adjust the width as needed -->
+            <input type="text" class="form-control" name="q" id="q" placeholder="Search...">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
         </div>
-    </div>
-
+    </form>
     <form id="contactListForm" method="post" action="{% url 'contact-list' %}">
         {% csrf_token %}
 
@@ -442,63 +443,6 @@
                         if (openDropdown.classList.contains('show')) {
                             openDropdown.classList.remove('show');
                         }
-                    }
-                }
-            });
-
-            // Search Functionality
-            const searchInput = document.getElementById('searchInput');
-            const contactRows = document.querySelectorAll('.contact-row');
-            const contactsInfo = document.querySelector('.contacts-info');
-
-            searchInput.addEventListener('input', function() {
-                const searchTerm = searchInput.value.trim().toLowerCase();
-                let visibleRowCount = 0;
-            
-                contactRows.forEach(row => {
-                    const firstName = row.querySelector('td:nth-child(2)').textContent.trim().toLowerCase();
-                    const lastName = row.querySelector('td:nth-child(3)').textContent.trim().toLowerCase();
-                    const email = row.querySelector('td:nth-child(4)').textContent.trim().toLowerCase();
-                    const title = row.querySelector('td:nth-child(5)').textContent.trim().toLowerCase();
-                    const company = row.querySelector('td:nth-child(6)').textContent.trim().toLowerCase();
-                    const type = row.querySelector('td:nth-child(7)').textContent.trim().toLowerCase();
-                    const location = row.querySelector('td:nth-child(8)').textContent.trim().toLowerCase();
-            
-                    const matchFound =
-                        firstName.includes(searchTerm) ||
-                        lastName.includes(searchTerm) ||
-                        email.includes(searchTerm) ||
-                        title.includes(searchTerm) ||
-                        company.includes(searchTerm) ||
-                        type.includes(searchTerm) ||
-                        location.includes(searchTerm);
-            
-                    if (matchFound) {
-                        if (visibleRowCount < contactsPerPage * currentPage) {
-                            row.style.display = ''; // Display the row if within the current page limit
-                            visibleRowCount++;
-                        } else {
-                            row.style.display = 'none'; // Hide the row if beyond the current page limit
-                        }
-                    } else {
-                        row.style.display = 'none'; // Hide rows not matching the search term
-                    }
-                });
-            
-                // Update the contact info text based on the visible rows after search
-                const totalVisibleContacts = document.querySelectorAll('.contact-row:not([style*="display: none"])').length;
-                contactsInfo.textContent = `Showing ${totalVisibleContacts} contact(s) out of ${contactRows.length}`;
-
-                // Update pagination when the search term is empty
-                if (searchTerm === '') {
-                    currentPage = 1; // Reset current page to 1
-                    showContacts(currentPage); // Show initial contacts for the first page
-                    const updatedTotalPages = Math.ceil(totalVisibleContacts / contactsPerPage);
-
-                    if (updatedTotalPages !== totalPages) {
-                        // Update pagination UI only if the total pages have changed
-                        totalPages = updatedTotalPages;
-                        updatePaginationUI(currentPage, totalPages); // Update pagination UI
                     }
                 }
             });
