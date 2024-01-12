@@ -15,6 +15,7 @@
             /* You can add other margin or padding properties as needed */
         }
     </style>
+    <!-- Search Bar -->
     <form class="form-inline" method="get" action="{% url 'contact-list' %}">
         <div class="input-group" style="width: 500px;"> <!-- Adjust the width as needed -->
             <input type="text" class="form-control" name="q" id="q" placeholder="Search...">
@@ -23,6 +24,7 @@
             </div>
         </div>
     </form>
+
     <form id="contactListForm" method="post" action="{% url 'contact-list' %}">
         {% csrf_token %}
 
@@ -242,60 +244,65 @@
             });
 
             // Function to apply filters based on selected values
-            // Global variables to store filter criteria
-            let globalSelectedType = '';
-            let globalSelectedCompany = '';
-            let globalSelectedLocation = '';
-            let globalSelectedLevel = '';
-
             function applyFilters() {
                 // Get filter criteria from the dropdowns
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
                 const selectedLevel = $('#levelFilter').val();
-
+            
                 // Update global filter criteria
                 globalSelectedType = selectedType;
                 globalSelectedCompany = selectedCompany;
                 globalSelectedLocation = selectedLocation;
                 globalSelectedLevel = selectedLevel;
-
-                currentPage = 1; // Reset to first page after filtering
-                let visibleContacts = 0;
-
+            
                 // Iterate through all rows in the table
                 $('#contactTableBody tr').each(function () {
                     const type = $(this).find('td:nth-child(7)').text().trim();
                     const company = $(this).find('td:nth-child(6)').text().trim();
                     const location = $(this).find('td:nth-child(8)').text().trim();
                     const level = $(this).find('td:nth-child(9)').text().trim();
-
+            
+                    // Check if all filters are selected
+                    const allFiltersSelected =
+                        globalSelectedType !== '' &&
+                        globalSelectedCompany !== '' &&
+                        globalSelectedLocation !== '' &&
+                        globalSelectedLevel !== '';
+            
                     // Check if the row matches the global filter criteria
                     const isVisible =
                         (globalSelectedType === '' || type === globalSelectedType) &&
                         (globalSelectedCompany === '' || company === globalSelectedCompany) &&
                         (globalSelectedLocation === '' || location === globalSelectedLocation) &&
                         (globalSelectedLevel === '' || level === globalSelectedLevel);
-
-                    if (isVisible && visibleContacts < contactsPerPage) {
+            
+                    if (isVisible) {
                         $(this).show();
-                        visibleContacts++;
+            
+                        // If all filters are selected, limit to 50 contacts
+                        if (allFiltersSelected) {
+                            if ($('#contactTableBody tr:visible').length > 50) {
+                                $(this).hide();
+                            }
+                        }
                     } else {
                         $(this).hide();
                     }
                 });
-
+            
                 // Update the pagination UI based on the filtered rows
-                updatePaginationUI(currentPage, totalPages);
-
+                // Assuming you have a function called updatePaginationUI
+                updatePaginationUI();
+            
                 // Calculate total visible contacts after applying filters
                 const totalVisibleContactsAfterFilter = $('#contactTableBody tr:visible').length;
-
+            
                 // Update contact info text based on the visible rows after filtering
                 const contactsInfo = document.querySelector('.contacts-info');
                 contactsInfo.textContent = `Showing ${totalVisibleContactsAfterFilter} contact(s) out of ${totalVisibleContactsAfterFilter}`;
-
+            
                 // Reset search input value to an empty string to handle scenarios where filters are applied after a search
                 $('#searchInput').val('');
                 // Trigger input event to re-run search functionality after filtering
@@ -307,29 +314,6 @@
                 event.preventDefault();
                 applyFilters();
             });
-
-            // Update pagination links
-            function updatePaginationLinks() {
-                const paginationLinks = document.querySelectorAll('.pagination a');
-                paginationLinks.forEach(link => {
-                    link.href = updateQueryStringParameter(link.href, 'q', globalSearchQuery);
-                    link.href = updateQueryStringParameter(link.href, 'type', globalSelectedType);
-                    link.href = updateQueryStringParameter(link.href, 'company', globalSelectedCompany);
-                    link.href = updateQueryStringParameter(link.href, 'location', globalSelectedLocation);
-                    link.href = updateQueryStringParameter(link.href, 'level', globalSelectedLevel);
-                });
-            }
-
-            // Function to update query string parameters
-            function updateQueryStringParameter(url, key, value) {
-                const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-                const separator = url.indexOf('?') !== -1 ? "&" : "?";
-                if (url.match(re)) {
-                    return url.replace(re, '$1' + key + "=" + value + '$2');
-                } else {
-                    return url + separator + key + "=" + value;
-                }
-            }
             
             // Function to populate dropdown items (Campaign dropdown)
             function populateCampaignDropdown(campaignNames) {
