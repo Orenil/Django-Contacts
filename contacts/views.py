@@ -125,16 +125,6 @@ def contact_list(request):
         filter_conditions &= Q(level__icontains=level_filter)
 
     contacts = contacts.filter(filter_conditions)
-        
-    # Pagination
-    paginator = Paginator(contacts, 50)  # Show 50 contacts per page
-    page = request.GET.get('page', 1)
-    try:
-        contacts = paginator.page(page)
-    except PageNotAnInteger:
-        contacts = paginator.page(1)
-    except EmptyPage:
-        contacts = paginator.page(paginator.num_pages)
 
     return render(request, 'contact_list.html', {
         'contacts': contacts,
