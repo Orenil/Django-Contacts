@@ -110,17 +110,21 @@ def contact_list(request):
     location_filter = request.GET.get('locationFilter')
     level_filter = request.GET.get('levelFilter')
 
+    filter_conditions = Q()
+
     if type_filter:
-        contacts = contacts.filter(type__icontains=type_filter)
+        filter_conditions &= Q(type__icontains=type_filter)
 
     if company_filter:
-        contacts = contacts.filter(company__icontains=company_filter)
+        filter_conditions &= Q(company__icontains=company_filter)
 
     if location_filter:
-        contacts = contacts.filter(location__icontains=location_filter)
+        filter_conditions &= Q(location__icontains=location_filter)
 
     if level_filter:
-        contacts = contacts.filter(level__icontains=level_filter)
+        filter_conditions &= Q(level__icontains=level_filter)
+
+    contacts = contacts.filter(filter_conditions)
         
     # Pagination
     paginator = Paginator(contacts, 50)  # Show 50 contacts per page
