@@ -1,0 +1,21 @@
+<!-- contact_rows.html -->
+{% for contact in contacts %}
+<tr class="contact-row" data-id="{{ contact.id }}">
+    <td>
+        <div class="text-center">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input contact-checkbox" id="contactCheckbox{{ contact.id }}" value="{{ contact.id }}">
+                <label class="custom-control-label" for="contactCheckbox{{ contact.id }}"></label>
+            </div>
+        </div>
+    </td>
+    <td>{{ contact.first_name }}</td>
+    <td>{{ contact.last_name }}</td>
+    <td>{{ contact.email }}</td>
+    <td>{{ contact.title }}</td>
+    <td>{{ contact.company }}</td>
+    <td>{{ contact.type }}</td>
+    <td>{{ contact.location }}</td>
+    <td>{{ contact.level }}</td>
+</tr>
+{% endfor %}
