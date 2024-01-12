@@ -216,28 +216,47 @@
                 const selectedLevel = $('#levelFilter').val(); // Get selected level value
 
                 let count = 0; // Counter for displayed rows
-                $('#contactTableBody tr').each(function () {
-                    const type = $(this).find('td:nth-child(7)').text().trim();
-                    const company = $(this).find('td:nth-child(6)').text().trim();
-                    const location = $(this).find('td:nth-child(8)').text().trim();
-                    const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
+                $('#contactTableBody tr').each(function() {
+                    if (count < 50) {
+                        const type = $(this).find('td:nth-child(7)').text().trim();
+                        const company = $(this).find('td:nth-child(6)').text().trim();
+                        const location = $(this).find('td:nth-child(8)').text().trim();
+                        const level = $(this).find('td:nth-child(9)').text().trim(); // Get level from table
 
-                    // Show/hide rows based on filter criteria
-                    if (
-                        (selectedType === '' || type === selectedType) &&
-                        (selectedCompany === '' || company === selectedCompany) &&
-                        (selectedLocation === '' || location === selectedLocation) &&
-                        (selectedLevel === '' || level === selectedLevel) // Check level filter
-                    ) {
-                        $(this).show();
-                        count++;
+                        // Show/hide rows based on filter criteria
+                        if (
+                            (selectedType === '' || type === selectedType) &&
+                            (selectedCompany === '' || company === selectedCompany) &&
+                            (selectedLocation === '' || location === selectedLocation) &&
+                            (selectedLevel === '' || level === selectedLevel) // Check level filter
+                        ) {
+                            $(this).show();
+                            count++;
+                        } else {
+                            $(this).hide();
+                        }
                     } else {
-                        $(this).hide();
+                        $(this).hide(); // Hide rows beyond the first six rows meeting the criteria
                     }
                 });
 
+                // Check if more rows exist with the selected filter value(s)
+                const filteredRowsWithFilter = $('#contactTableBody tr').filter(function() {
+                    const type = $(this).find('td:nth-child(7)').text().trim();
+                    const company = $(this).find('td:nth-child(6)').text().trim();
+                    const location = $(this).find('td:nth-child(8)').text().trim();
+                    const level = $(this).find('td:nth-child(9)').text().trim();
+
+                    return (
+                        (selectedType === '' || type === selectedType) &&
+                        (selectedCompany === '' || company === selectedCompany) &&
+                        (selectedLocation === '' || location === selectedLocation) &&
+                        (selectedLevel === '' || level === selectedLevel)
+                    );
+                }).length;
+
                 // Show Load More button if more rows with the selected filter value(s) are available
-                if (count > 50) {
+                if (filteredRowsWithFilter > 50) {
                     $('#viewMoreButton').show();
                 } else {
                     $('#viewMoreButton').hide();
