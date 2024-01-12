@@ -104,9 +104,27 @@ def contact_list(request):
             Q(level__icontains=query)
         )
 
+    # Apply filters based on filter parameters
+    type_filter = request.GET.get('typeFilter')
+    company_filter = request.GET.get('companyFilter')
+    location_filter = request.GET.get('locationFilter')
+    level_filter = request.GET.get('levelFilter')
+
+    if type_filter:
+        contacts = contacts.filter(type__icontains=type_filter)
+
+    if company_filter:
+        contacts = contacts.filter(company__icontains=company_filter)
+
+    if location_filter:
+        contacts = contacts.filter(location__icontains=location_filter)
+
+    if level_filter:
+        contacts = contacts.filter(level__icontains=level_filter)
+        
     # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(contacts, 50)  # Show 10 contacts per page
+    paginator = Paginator(contacts, 50)  # Show 50 contacts per page
     try:
         contacts = paginator.page(page)
     except PageNotAnInteger:
