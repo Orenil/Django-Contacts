@@ -307,6 +307,29 @@
                 event.preventDefault();
                 applyFilters();
             });
+
+            // Update pagination links
+            function updatePaginationLinks() {
+                const paginationLinks = document.querySelectorAll('.pagination a');
+                paginationLinks.forEach(link => {
+                    link.href = updateQueryStringParameter(link.href, 'q', globalSearchQuery);
+                    link.href = updateQueryStringParameter(link.href, 'type', globalSelectedType);
+                    link.href = updateQueryStringParameter(link.href, 'company', globalSelectedCompany);
+                    link.href = updateQueryStringParameter(link.href, 'location', globalSelectedLocation);
+                    link.href = updateQueryStringParameter(link.href, 'level', globalSelectedLevel);
+                });
+            }
+
+            // Function to update query string parameters
+            function updateQueryStringParameter(url, key, value) {
+                const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+                const separator = url.indexOf('?') !== -1 ? "&" : "?";
+                if (url.match(re)) {
+                    return url.replace(re, '$1' + key + "=" + value + '$2');
+                } else {
+                    return url + separator + key + "=" + value;
+                }
+            }
             
             // Function to populate dropdown items (Campaign dropdown)
             function populateCampaignDropdown(campaignNames) {
