@@ -4,14 +4,14 @@ from phonenumber_field.modelfields import PhoneNumberField
 from PIL import Image
 
 class Contact(models.Model):
-    first_name = models.CharField(max_length=50, default='None', db_index=True)
-    last_name = models.CharField(max_length=50, default='None', db_index=True)
+    first_name = models.CharField(max_length=50, default='')
+    last_name = models.CharField(max_length=50, default='')
     email = models.EmailField()
-    title = models.CharField(max_length=100, default='No Title', db_index=True)
-    company = models.CharField(max_length=100, default='No Company', db_index=True)
-    type = models.CharField(max_length=100, default='None', db_index=True)
-    location = models.CharField(max_length=100, db_index=True)
-    level = models.CharField(max_length=100, default='None', db_index=True)
+    title = models.CharField(max_length=100, default='')
+    company = models.CharField(max_length=100, default='')
+    type = models.CharField(max_length=100, default='')
+    location = models.CharField(max_length=100, default='')
+    level = models.CharField(max_length=100, default='')
     
     class Meta:
         verbose_name = "Contact"
@@ -28,13 +28,13 @@ class SelectedContacts(models.Model):
 class Campaign_Emails(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     email = models.EmailField()
-    first_name = models.CharField(max_length=100, default='', db_index=True)
-    last_name = models.CharField(max_length=100, default='', db_index=True)
-    company = models.CharField(max_length=100, default='', db_index=True)
-    type = models.CharField(max_length=100, default='', db_index=True)
-    location = models.CharField(max_length=100, default='None', db_index=True)  
-    title = models.CharField(max_length=100, default='', db_index=True)
-    campaign_name = models.CharField(max_length=255, default='', db_index=True)
+    first_name = models.CharField(max_length=100, default='')
+    last_name = models.CharField(max_length=100, default='')
+    company = models.CharField(max_length=100, default='')
+    type = models.CharField(max_length=100, default='')
+    location = models.CharField(max_length=100, default='None')  
+    title = models.CharField(max_length=100, default='')
+    campaign_name = models.CharField(max_length=255, default='')
     
     def __str__(self):
         return self.email
