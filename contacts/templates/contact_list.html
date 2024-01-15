@@ -27,8 +27,44 @@
         {% csrf_token %}
 
         <div class="d-flex justify-content-end mt-3 mb-3">
+            <!-- Filter Menu -->
+            <div class="filter-menu">
+                <label for="typeFilter">Type:</label>
+                <select id="typeFilter">
+                    <option value="">All</option>
+                    {% for type in distinct_types %}
+                    <option value="{{ type }}">{{ type }}</option>
+                    {% endfor %}
+                </select>
+                <label for="companyFilter">Company:</label>
+                <select id="companyFilter">
+                    <option value="">All</option>
+                    {% for company in distinct_companies %}
+                    <option value="{{ company }}">{{ company }}</option>
+                    {% endfor %}
+                </select>
+                <label for="locationFilter">Location:</label>
+                <select id="locationFilter">
+                    <option value="">All</option>
+                    {% for location in distinct_locations %}
+                    <option value="{{ location }}">{{ location }}</option>
+                    {% endfor %}
+                </select>
+                <label for="levelFilter">Level:</label>
+                <select id="levelFilter">
+                    <option value="">All</option>
+                    {% for level in distinct_levels %}
+                    <option value="{{ level }}">{{ level }}</option>
+                    {% endfor %}
+                </select>
+        
+                &nbsp;&nbsp;
+        
+                <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
+            </div>
+        
             <!-- Add campaign dropdown -->
-            <div class="ml-2">
+            <div class="ml-1">
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="addCampaignDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Add to Campaign
@@ -41,42 +77,6 @@
                 </div>
             </div>
         </div>
-        <!-- Filter Menu -->
-        <div class="filter-menu float-right">
-            <label for="typeFilter">Type:</label>
-            <select id="typeFilter">
-                <option value="">All</option>
-                {% for type in distinct_types %}
-                <option value="{{ type }}">{{ type }}</option>
-                {% endfor %}
-            </select>
-            <label for="companyFilter">Company:</label>
-            <select id="companyFilter">
-                <option value="">All</option>
-                {% for company in distinct_companies %}
-                <option value="{{ company }}">{{ company }}</option>
-                {% endfor %}
-            </select>
-            <label for="locationFilter">Location:</label>
-            <select id="locationFilter">
-                <option value="">All</option>
-                {% for location in distinct_locations %}
-                <option value="{{ location }}">{{ location }}</option>
-                {% endfor %}
-            </select>
-            <label for="levelFilter">Level:</label>
-            <select id="levelFilter">
-                <option value="">All</option>
-                {% for level in distinct_levels %}
-                <option value="{{ level }}">{{ level }}</option>
-                {% endfor %}
-            </select>
-
-            &nbsp;&nbsp;
-
-            <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
-        </div>
-
         <h1>Contact List</h1>
 
         <!-- Display Contacts -->
