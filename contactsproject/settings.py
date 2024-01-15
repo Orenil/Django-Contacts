@@ -33,6 +33,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or another session eng
 
 SESSION_COOKIE_NAME = 'regular_user_sessionid'
 SESSION_COOKIE_NAME = 'superuser_sessionid' 
+SESSION_COOKIE_SECURE = True
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
