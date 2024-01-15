@@ -375,9 +375,9 @@ def campaign_page(request):
 
     # Fetch distinct campaign names for filtering purposes
     distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct() 
-    distinct_types = Contact.objects.values_list('type', flat=True).distinct()
-    distinct_companies = Contact.objects.values_list('company', flat=True).distinct()
-    distinct_locations = Contact.objects.values_list('location', flat=True).distinct()
+    distinct_types = Campaign_Emails.objects.values_list('type', flat=True).distinct()
+    distinct_companies = Campaign_Emails.objects.values_list('company', flat=True).distinct()
+    distinct_locations = Campaign_Emails.objects.values_list('location', flat=True).distinct()
 
     return render(request, 'campaign.html', {
         'campaign_emails': campaign_emails,
