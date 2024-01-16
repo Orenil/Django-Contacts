@@ -128,7 +128,7 @@
                     <td>{{ contact.type }}</td>
                     <td>{{ contact.location }}</td>
                     <td>{{ contact.level }}</td>
-                    <td>{{ contact.linkedin }}</td>
+                    <td><a href="{{ contact.linkedin }}" target="_blank">{{ contact.linkedin }}</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
