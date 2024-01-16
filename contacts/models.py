@@ -12,6 +12,7 @@ class Contact(models.Model):
     type = models.CharField(max_length=100, default='')
     location = models.CharField(max_length=100, default='')
     level = models.CharField(max_length=100, default='')
+    linkedin = models.CharField(max_length=100, default='')
     
     class Meta:
         verbose_name = "Contact"

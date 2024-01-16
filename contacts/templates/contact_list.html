@@ -105,6 +105,7 @@
                     <th scope="col">Type</th>
                     <th scope="col">Location</th>
                     <th scope="col">Level</th>
+                    <th scope="col">LinkedIn</th>
                 </tr>
             </thead>
             <tbody id="contactTableBody">
@@ -127,6 +128,7 @@
                     <td>{{ contact.type }}</td>
                     <td>{{ contact.location }}</td>
                     <td>{{ contact.level }}</td>
+                    <td>{{ contact.linkedin }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -247,7 +249,8 @@
                             company: getTextContent(row, 'td:nth-child(6)'),
                             type: getTextContent(row, 'td:nth-child(7)'),
                             location: getTextContent(row, 'td:nth-child(8)'),
-                            level: getTextContent(row, 'td:nth-child(9)')
+                            level: getTextContent(row, 'td:nth-child(9)'),
+                            linkedin: getTextContent(row, 'td:nth-child(10)')
                         };
 
                         const isEmpty = Object.values(contactDetails).some(value => value.trim() === '');

@@ -101,7 +101,8 @@ def contact_list(request):
             Q(company__icontains=query) |
             Q(type__icontains=query) |
             Q(location__icontains=query) |
-            Q(level__icontains=query)
+            Q(level__icontains=query) |
+            Q(linkedin__icontains=query)
         )
 
     # Apply filters based on filter parameters

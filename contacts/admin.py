@@ -10,7 +10,7 @@ from .models import Contact
 from .models import Campaign_Emails, Campaign, Profile
 
 class ContactAdmin(ImportExportModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'title', 'company', 'type', 'location', 'level')
+    list_display = ('first_name', 'last_name', 'email', 'title', 'company', 'type', 'location', 'level', 'linkedin')
     search_fields = ['first_name', 'last_name', 'email', 'company', 'type', 'location']
     
     
