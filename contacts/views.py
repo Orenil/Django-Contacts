@@ -86,6 +86,7 @@ def contact_list(request):
     distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
     distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
     distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
+    distinct_university = Contact.objects.order_by('university').values_list('university', flat=True).distinct()
 
     # Get all contacts
     contacts = Contact.objects.all()
@@ -102,6 +103,7 @@ def contact_list(request):
             Q(type__icontains=query) |
             Q(location__icontains=query) |
             Q(level__icontains=query) |
+            Q(university__icontains=query) |
             Q(linkedin__icontains=query)
         )
 
@@ -110,6 +112,7 @@ def contact_list(request):
     company_filter = request.GET.get('companyFilter')
     location_filter = request.GET.get('locationFilter')
     level_filter = request.GET.get('levelFilter')
+    university_filter = request.GET.get('universityFilter')
 
     filter_conditions = Q()
 
@@ -124,6 +127,9 @@ def contact_list(request):
 
     if level_filter:
         filter_conditions &= Q(level__icontains=level_filter)
+        
+    if university_filter:
+        filter_conditions &= Q(university__icontains=university_filter)
 
     contacts = contacts.filter(filter_conditions)
 
@@ -133,6 +139,7 @@ def contact_list(request):
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
         'distinct_levels': distinct_levels,
+        'distinct_university': distinct_university,
         'campaign_names': campaign_names,
         'query': query,  # Pass the query to the template for display
     })
@@ -189,6 +196,7 @@ def filter_contacts(request):
         company_filter = request.POST.get('company')
         location_filter = request.POST.get('location')
         level_filter = request.POST.get('level')
+        university_filter = request.GET.get('universityFilter')
         page_number = request.POST.get('page')  # Get the requested page number
 
         # Retrieve all contacts
@@ -205,6 +213,8 @@ def filter_contacts(request):
             filtered_contacts = filtered_contacts.filter(location=location_filter)
         if level_filter:
             filtered_contacts = filtered_contacts.filter(level=level_filter)
+        if university_filter:
+            filtered_contacts = filtered_contacts.filter(university=university_filter)
 
         # Pagination logic
         contacts_per_page = 50  # Set the number of contacts per page
@@ -234,7 +244,7 @@ def filter_contacts(request):
 
 def get_selected_contacts(request):
     contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
-    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'company', 'type', 'location', 'level')
+    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'company', 'type', 'location', 'level', 'university','linkedin')
 
     return JsonResponse({'contacts': list(contacts)})
 
