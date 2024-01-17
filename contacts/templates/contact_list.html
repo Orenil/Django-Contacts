@@ -14,8 +14,8 @@
     }
 
     .filter-menu select {
-        width: 100px; /* Set a fixed width for dropdowns */
-        margin-right: 10px; /* Adjust the spacing between dropdowns */
+        width: 50px; /* Set a fixed width for dropdowns */
+        margin-right: 5px; /* Adjust the spacing between dropdowns */
     }
 </style>
 <div class="container mt-4">
@@ -60,6 +60,13 @@
                     <option value="">All</option>
                     {% for level in distinct_levels %}
                     <option value="{{ level }}">{{ level }}</option>
+                    {% endfor %}
+                </select>
+                <label for="universityFilter">Level:</label>
+                <select id="universityFilter">
+                    <option value="">All</option>
+                    {% for level in distinct_university %}
+                    <option value="{{ university }}">{{ university }}</option>
                     {% endfor %}
                 </select>
         
@@ -169,7 +176,7 @@
                         (selectedCompany === '' || company === selectedCompany) &&
                         (selectedLocation === '' || location === selectedLocation) &&
                         (selectedLevel === '' || level === selectedLevel) &&
-                        (selectedUniversity === '' || University === selectedUniversity)
+                        (selectedUniversity === '' || university === selectedUniversity)
                     ) {
                         $(this).show();
                     } else {
