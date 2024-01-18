@@ -199,9 +199,15 @@
       {% endif %}
   
       {% for num in campaign_emails.paginator.page_range %}
-        <li class="page-item{% if campaign_emails.number == num %} active{% endif %}">
-          <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">{{ num }}{% if campaign_emails.number == num %} <span class="sr-only">(current)</span>{% endif %}</a>
-        </li>
+        {% if campaign_emails.number == num %}
+          <li class="page-item active">
+            <span class="page-link">{{ num }} <span class="sr-only">(current)</span></span>
+          </li>
+        {% elif num > campaign_emails.number|add:'-3' and num < campaign_emails.number|add:'3' %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">{{ num }}</a>
+          </li>
+        {% endif %}
       {% endfor %}
   
       {% if campaign_emails.has_next %}
