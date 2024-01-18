@@ -127,11 +127,33 @@ def contact_list(request):
 
     if level_filter:
         filter_conditions &= Q(level__icontains=level_filter)
-        
+
     if university_filter:
         filter_conditions &= Q(university__icontains=university_filter)
 
+    # Combine search query and filters
     contacts = contacts.filter(filter_conditions)
+
+    # Pagination
+    items_per_page = 50
+    page = request.GET.get('page', 1)
+
+    paginator = Paginator(contacts, items_per_page)
+    try:
+        contacts = paginator.page(page)
+    except PageNotAnInteger:
+        contacts = paginator.page(1)
+    except EmptyPage:
+        contacts = paginator.page(paginator.num_pages)
+
+    # Pass filter parameters in the context
+    filter_params = {
+        'typeFilter': type_filter,
+        'companyFilter': company_filter,
+        'locationFilter': location_filter,
+        'levelFilter': level_filter,
+        'universityFilter': university_filter,
+    }
 
     return render(request, 'contact_list.html', {
         'contacts': contacts,
@@ -142,8 +164,8 @@ def contact_list(request):
         'distinct_university': distinct_university,
         'campaign_names': campaign_names,
         'query': query,  # Pass the query to the template for display
+        'filter_params': filter_params,  # Pass filter parameters to maintain consistency
     })
-
 
 @login_required
 def get_campaign_names(request):
@@ -381,23 +403,86 @@ def campaign_page(request):
     # Fetch campaigns associated with the logged-in user only
     user_campaigns = Campaign.objects.filter(user=request.user)
 
-    # Fetch campaign emails for the campaigns associated with the logged-in user
-    campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
+    # Fetch filter parameters
+    type_filter = request.GET.get('typeFilter')
+    company_filter = request.GET.get('companyFilter')
+    location_filter = request.GET.get('locationFilter')
+    campaign_filter = request.GET.get('campaignFilter')
+
+    # Apply filters to campaign emails based on filter parameters
+    filter_conditions = Q()
+
+    if type_filter:
+        filter_conditions &= Q(type__icontains=type_filter)
+
+    if company_filter:
+        filter_conditions &= Q(company__icontains=company_filter)
+
+    if location_filter:
+        filter_conditions &= Q(location__icontains=location_filter)
+
+    if campaign_filter:
+        filter_conditions &= Q(campaign_name__icontains=campaign_filter)
+
+    # Fetch search query parameter
+    search_query = request.GET.get('searchQuery')
+
+    # Apply search query to filter conditions
+    if search_query:
+        filter_conditions &= (
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(title__icontains=search_query) |
+            Q(campaign_name__icontains=search_query) |
+            Q(type__icontains=search_query) |
+            Q(company__icontains=search_query) |
+            Q(location__icontains=search_query) 
+        )
+
+    # Fetch all campaign emails for the campaigns associated with the logged-in user and apply filters
+    all_campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
+
+    # Apply filters and search query to the entire dataset
+    filtered_campaign_emails = all_campaign_emails.filter(filter_conditions)
+
+    # Pagination
+    items_per_page = 50
+    page = request.GET.get('page', 1)
+
+    paginator = Paginator(filtered_campaign_emails, items_per_page)
+    try:
+        campaign_emails = paginator.page(page)
+    except PageNotAnInteger:
+        campaign_emails = paginator.page(1)
+    except EmptyPage:
+        campaign_emails = paginator.page(paginator.num_pages)
 
     # Fetch distinct campaign names for filtering purposes
-    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct() 
-    distinct_types = Campaign_Emails.objects.values_list('type', flat=True).distinct()
-    distinct_companies = Campaign_Emails.objects.values_list('company', flat=True).distinct()
-    distinct_locations = Campaign_Emails.objects.values_list('location', flat=True).distinct()
+    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
+    distinct_types = all_campaign_emails.values_list('type', flat=True).distinct()
+    distinct_companies = all_campaign_emails.values_list('company', flat=True).distinct()
+    distinct_locations = all_campaign_emails.values_list('location', flat=True).distinct()
+
+    # Pass filter parameters and search query in the context
+    filter_params = {
+        'typeFilter': type_filter,
+        'companyFilter': company_filter,
+        'locationFilter': location_filter,
+        'campaignFilter': campaign_filter,
+        'searchQuery': search_query,
+    }
 
     return render(request, 'campaign.html', {
         'campaign_emails': campaign_emails,
         'distinct_campaigns': distinct_campaigns,
         'distinct_types': distinct_types,
         'distinct_companies': distinct_companies,
-        'distinct_locations': distinct_locations
+        'distinct_locations': distinct_locations,
+        'filter_params': filter_params,
     })
-
+    
+    
 @csrf_exempt
 def filter_leads(request):
     if request.method == 'POST':

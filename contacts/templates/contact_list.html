@@ -20,7 +20,7 @@
 </style>
 <div class="container mt-4">
 
-    <form class="form-inline" method="get" action="{% url 'contact-list' %}">
+    <form class="form-inline" id="searchForm" method="get" action="{% url 'contact-list' %}">
         <div class="input-group" style="width: 500px;"> <!-- Adjust the width as needed -->
             <input type="text" class="form-control" name="q" id="q" placeholder="Search...">
             <div class="input-group-append">
@@ -28,7 +28,7 @@
             </div>
         </div>
     </form>
-    <form id="contactListForm" method="post" action="{% url 'contact-list' %}">
+    <form id="contactListForm" method="get" action="{% url 'contact-list' %}">
         {% csrf_token %}
 
         <div class="d-flex justify-content-end mt-3 mb-3">
@@ -142,7 +142,50 @@
                 {% endfor %}
             </tbody>
         </table>
+        <p class="text-center mt-3 mb-3">Showing {{ contacts.start_index }} - {{ contacts.end_index }} of {{ contacts.paginator.count }} contacts</p>
     </form>
+    <!-- Pagination -->
+    <nav aria-label="..." class="d-flex justify-content-center">
+        <ul class="pagination">
+        {% if contacts.has_previous %}
+            <li class="page-item">
+            <a class="page-link" href="?page=1{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}" tabindex="-1" aria-disabled="true">First</a>
+            </li>
+            <li class="page-item">
+            <a class="page-link" href="?page={{ contacts.previous_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Previous</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+            <span class="page-link" tabindex="-1" aria-disabled="true">First</span>
+            </li>
+            <li class="page-item disabled">
+            <span class="page-link" tabindex="-1" aria-disabled="true">Previous</span>
+            </li>
+        {% endif %}
+    
+        {% for num in contacts.paginator.page_range %}
+            <li class="page-item{% if contacts.number == num %} active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">{{ num }}{% if contacts.number == num %} <span class="sr-only">(current)</span>{% endif %}</a>
+            </li>
+        {% endfor %}
+    
+        {% if contacts.has_next %}
+            <li class="page-item">
+            <a class="page-link" href="?page={{ contacts.next_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Next</a>
+            </li>
+            <li class="page-item">
+            <a class="page-link" href="?page={{ contacts.paginator.num_pages }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Last</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+            <span class="page-link">Next</span>
+            </li>
+            <li class="page-item disabled">
+            <span class="page-link">Last</span>
+            </li>
+        {% endif %}
+        </ul>
+    </nav>
 </div>
 
     <script>
@@ -156,6 +199,37 @@
                     checkbox.checked = selectAllCheckbox.checked;
                 });
             });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            $('#q').val(urlParams.get('q'));
+
+            // Handle search form submission
+            $('#searchForm').on('submit', function (event) {
+                event.preventDefault();
+                const query = $('#q').val().trim();
+
+                // Construct the new URL with search query
+                const url = new URL(window.location.href);
+                url.searchParams.set('q', query);
+
+                // Redirect to the new URL
+                window.location.href = url.toString();
+            });
+
+            // Preserve filter parameters when clicking on pagination links
+            $('.pagination a').on('click', function (event) {
+                event.preventDefault();
+                const pageUrl = new URL($(this).attr('href'), window.location.href);
+                const url = new URL(window.location.href);
+
+                // Copy filter parameters from the pagination link to the current URL
+                pageUrl.searchParams.forEach((value, key) => {
+                    url.searchParams.set(key, value);
+                });
+
+                // Redirect to the new URL
+                window.location.href = url.toString();
+            });
         
             function applyFilters() {
                 const selectedType = $('#typeFilter').val();
@@ -164,31 +238,49 @@
                 const selectedLevel = $('#levelFilter').val();
                 const selectedUniversity = $('#universityFilter').val();
         
-                $('#contactTableBody tr').each(function() {
-                    const type = $(this).find('td:nth-child(7)').text().trim();
-                    const company = $(this).find('td:nth-child(6)').text().trim();
-                    const location = $(this).find('td:nth-child(8)').text().trim();
-                    const level = $(this).find('td:nth-child(9)').text().trim();
-                    const university = $(this).find('td:nth-child(10)').text().trim();
+                // Construct the new URL with filter parameters
+                const url = new URL(window.location.href);
+                url.searchParams.set('typeFilter', selectedType);
+                url.searchParams.set('companyFilter', selectedCompany);
+                url.searchParams.set('locationFilter', selectedLocation);
+                url.searchParams.set('levelFilter', selectedLevel);
+                url.searchParams.set('universityFilter', selectedUniversity);
         
-                    if (
-                        (selectedType === '' || type === selectedType) &&
-                        (selectedCompany === '' || company === selectedCompany) &&
-                        (selectedLocation === '' || location === selectedLocation) &&
-                        (selectedLevel === '' || level === selectedLevel) &&
-                        (selectedUniversity === '' || university === selectedUniversity)
-                    ) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                // Redirect to the new URL
+                window.location.href = url.toString();
             }
         
-            $('#applyFilterButton').on('click', function(event) {
-                event.preventDefault();
-                applyFilters();
-            });
+            // On document ready
+            $(document).ready(function () {
+                // Populate filter dropdowns with values from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                $('#typeFilter').val(urlParams.get('typeFilter'));
+                $('#companyFilter').val(urlParams.get('companyFilter'));
+                $('#locationFilter').val(urlParams.get('locationFilter'));
+                $('#levelFilter').val(urlParams.get('levelFilter'));
+                $('#universityFilter').val(urlParams.get('universityFilter'));
+        
+                // Apply filters when the Apply Filters button is clicked
+                $('#applyFilterButton').on('click', function (event) {
+                    event.preventDefault();
+                    applyFilters();
+                });
+        
+                // Preserve filter parameters when clicking on pagination links
+                $('.pagination a').on('click', function (event) {
+                    event.preventDefault();
+                    const pageUrl = new URL($(this).attr('href'), window.location.href);
+                    const url = new URL(window.location.href);
+                    
+                    // Copy filter parameters from the pagination link to the current URL
+                    pageUrl.searchParams.forEach((value, key) => {
+                        url.searchParams.set(key, value);
+                    });
+        
+                    // Redirect to the new URL
+                    window.location.href = url.toString();
+                });
+            })
         
             function retrieveStoredContacts() {
                 const storedContactIds = sessionStorage.getItem('selectedContacts');
