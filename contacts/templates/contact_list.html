@@ -147,43 +147,49 @@
     <!-- Pagination -->
     <nav aria-label="..." class="d-flex justify-content-center">
         <ul class="pagination">
-        {% if contacts.has_previous %}
-            <li class="page-item">
-            <a class="page-link" href="?page=1{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}" tabindex="-1" aria-disabled="true">First</a>
-            </li>
-            <li class="page-item">
-            <a class="page-link" href="?page={{ contacts.previous_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Previous</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled">
-            <span class="page-link" tabindex="-1" aria-disabled="true">First</span>
-            </li>
-            <li class="page-item disabled">
-            <span class="page-link" tabindex="-1" aria-disabled="true">Previous</span>
-            </li>
-        {% endif %}
+            {% if contacts.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}" tabindex="-1" aria-disabled="true">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.previous_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link" tabindex="-1" aria-disabled="true">First</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link" tabindex="-1" aria-disabled="true">Previous</span>
+                </li>
+            {% endif %}
     
-        {% for num in contacts.paginator.page_range %}
-            <li class="page-item{% if contacts.number == num %} active{% endif %}">
-            <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">{{ num }}{% if contacts.number == num %} <span class="sr-only">(current)</span>{% endif %}</a>
-            </li>
-        {% endfor %}
+            {% for num in contacts.paginator.page_range %}
+                {% if contacts.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }} <span class="sr-only">(current)</span></span>
+                    </li>
+                {% elif num > contacts.number|add:'-3' and num < contacts.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
     
-        {% if contacts.has_next %}
-            <li class="page-item">
-            <a class="page-link" href="?page={{ contacts.next_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Next</a>
-            </li>
-            <li class="page-item">
-            <a class="page-link" href="?page={{ contacts.paginator.num_pages }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Last</a>
-            </li>
-        {% else %}
-            <li class="page-item disabled">
-            <span class="page-link">Next</span>
-            </li>
-            <li class="page-item disabled">
-            <span class="page-link">Last</span>
-            </li>
-        {% endif %}
+            {% if contacts.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.next_page_number }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ contacts.paginator.num_pages }}{% if filter_params %}&{{ filter_params.urlencode }}{% endif %}">Last</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Last</span>
+                </li>
+            {% endif %}
         </ul>
     </nav>
 </div>
