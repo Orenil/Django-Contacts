@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
 
-ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com']
+ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com', 'www.followupnetworking.com', 'followupnetworking.com']
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or another session engine of your choice
 
