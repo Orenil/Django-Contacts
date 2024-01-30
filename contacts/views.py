@@ -1,14 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm
 from django.contrib import messages
+from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Contact, Campaign_Emails, Campaign
+from .models import Contact, Campaign_Emails, Campaign, Email
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
@@ -25,6 +28,7 @@ import json
 import requests
 import logging
 from datetime import date
+import os
 
 def login(request):
     if request.method == 'POST':
@@ -734,4 +738,94 @@ def get_campaign_status(request):
             return JsonResponse({'error': str(e)}, status=500, safe=False)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
-    
+
+@login_required
+def email_template_page(request):
+    # Retrieve emails associated with the logged-in user
+    user_emails = Email.objects.filter(user=request.user)
+
+    # Fetch campaign names associated with the logged-in user
+    user_campaigns = Campaign.objects.filter(user=request.user)
+    campaign_names = user_campaigns.values_list('name', flat=True)
+
+    return render(request, 'email_template.html', {'user_emails': user_emails, 'campaign_names': campaign_names})
+
+@login_required
+def send_email(request):
+    if request.method == 'POST':
+        selected_campaign_name = request.POST.get('selected_campaign', None)
+        subject = request.POST.get('subject', '')
+        email_content1 = request.POST.get('emailContent1', '')
+        email_content2 = request.POST.get('emailContent2', '')
+        email_content3 = request.POST.get('emailContent3', '')
+        font_family = request.POST.get('font_family', '')  # Updated to match the form field name
+        font_size = request.POST.get('font_size', '')  # Updated to match the form field name
+
+        if not selected_campaign_name:
+            return JsonResponse({'error': 'Please select a campaign'}, status=400)
+
+        user_campaigns = Campaign.objects.filter(user=request.user, name=selected_campaign_name)
+        if user_campaigns.exists():
+            selected_campaign = user_campaigns.first()
+            # Check if an email already exists for this campaign
+            email = Email.objects.filter(user=request.user, campaign=selected_campaign).first()
+
+            if email:
+                # Update existing email
+                email.subject = subject
+                email.email_content1 = email_content1
+                email.email_content2 = email_content2
+                email.email_content3 = email_content3
+                email.font_family = font_family
+                email.font_size = font_size
+                email.save()
+
+                # Send email notification
+                send_mail(
+                    'Email Updated',
+                    f'The email for campaign "{selected_campaign_name}" has been updated.',
+                    os.environ.get('EMAIL_USER'),  # Sender's email
+                    ['followupnowinfo@gmail.com'],  # Replace with the recipient's email
+                    fail_silently=False,
+                )
+
+            else:
+                # Create a new email
+                Email.objects.create(
+                    user=request.user,
+                    subject=subject,
+                    email_content1=email_content1,
+                    email_content2=email_content2,
+                    email_content3=email_content3,
+                    font_family=font_family,
+                    font_size=font_size,
+                    campaign=selected_campaign
+                )
+
+            return HttpResponseRedirect(reverse('email_template'))
+
+    return HttpResponseRedirect(reverse('email_template'))
+
+def get_email_details(request):
+    if request.method == 'GET' and 'campaign' in request.GET:
+        selected_campaign_name = request.GET['campaign']
+        try:
+            # Retrieve the email associated with the selected campaign
+            selected_email = Email.objects.get(user=request.user, campaign__name=selected_campaign_name)
+            email_contents = {
+                'emailContent1': selected_email.email_content1,
+                'emailContent2': selected_email.email_content2,
+                'emailContent3': selected_email.email_content3,
+                'subject': selected_email.subject,
+            }
+            return JsonResponse(email_contents)
+        except Email.DoesNotExist:
+            # Return default values when no email is found
+            return JsonResponse({
+                'emailContent1': '',
+                'emailContent2': '',
+                'emailContent3': '',
+                'subject': '',
+            })
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

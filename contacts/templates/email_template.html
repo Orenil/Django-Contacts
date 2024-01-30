@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    <title>Email Template</title>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Email Template</h1>
+        <form method="post" action="{% url 'send_email' %}">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="selected_campaign">Select Campaign:</label>
+                    <select class="form-control" id="selected_campaign" name="selected_campaign" required>
+                        {% for campaign in campaign_names %}
+                            <option value="{{ campaign }}">{{ campaign }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label for="fontFamilySelect">Select desired Font Family:</label>
+                    <select class="form-control" id="fontFamilySelect" name="font_family">
+                        <!-- Add your font family options here -->
+                        <option value="Arial">Arial</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Georgia">Georgia</option> <!-- Added Georgia font family -->
+                        <!-- Add more options as needed -->
+                    </select>
+                </div>
+
+                <div class="form-group col-md-3">
+                    <label for="fontSizeSelect">Select desired Font Size:</label>
+                    <select class="form-control" id="fontSizeSelect" name="font_size">
+                        <!-- Add your font size options here -->
+                        <option value="12px">12px</option>
+                        <option value="14px">14px</option>
+                        <option value="16px">16px</option> <!-- Added 16px font size -->
+                        <!-- Add more options as needed -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject:</label>
+                <input type="text" class="form-control" id="subject" name="subject" style="font-weight: bold;" required>
+            </div>
+
+            <div class="form-group">
+                <label for="emailContent1">Cold Initial Email:</label>
+                <textarea class="form-control" id="emailContent1" name="emailContent1" rows="10" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="emailContent2">First Follow-up:</label>
+                <textarea class="form-control" id="emailContent2" name="emailContent2" rows="10" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="emailContent3">Second Follow-up:</label>
+                <textarea class="form-control" id="emailContent3" name="emailContent3" rows="10" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+
+    <!-- Add this script section at the end of your HTML body or in a separate JS file -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <script>
+        // Function to update email content and subject based on the selected campaign
+        function updateEmailContentAndSubject(selectedCampaign) {
+            // You may need to adjust this part based on how your data is structured
+            $.ajax({
+                url: '{% url "get_email_details" %}',
+                type: 'GET',
+                data: { campaign: selectedCampaign },
+                success: function(data) {
+                    // Update the form fields with the retrieved data
+                    $('#emailContent1').val(data.emailContent1);
+                    $('#emailContent2').val(data.emailContent2);
+                    $('#emailContent3').val(data.emailContent3);
+                    $('#subject').val(data.subject);
+
+                    // Apply styles to email content based on saved preferences
+                    applyStyles(data.styles);
+
+                    // Make the subject text bold
+                    $('#subject').css('font-weight', 'bold');
+                },
+                error: function(error) {
+                    console.log('Error fetching email contents:', error);
+                }
+            });
+        }
+
+        // Function to apply styles to the email content
+        function applyStyles(styles) {
+            $('#emailContent1, #emailContent2, #emailContent3').css({
+                'font-family': styles.fontFamily,
+                'font-size': styles.fontSize,
+            });
+        }
+
+        $(document).ready(function() {
+            // Set default font family and font size
+            var defaultFontFamily = 'Arial';
+            var defaultFontSize = '14px';
+
+            // Set default values for font family and font size
+            $('#fontFamilySelect').val(defaultFontFamily);
+            $('#fontSizeSelect').val(defaultFontSize);
+
+            // Apply default styles to email content
+            applyStyles({ fontFamily: defaultFontFamily, fontSize: defaultFontSize });
+
+            // Make the subject text bold on document ready
+            $('#subject').css('font-weight', 'bold');
+
+            // Fetch campaign names and populate the dropdown
+            $.ajax({
+                url: '{% url "get_campaign_names" %}',
+                type: 'GET',
+                success: function(data) {
+                    var campaignDropdown = $('#selected_campaign');
+                    campaignDropdown.empty();
+                    $.each(data.campaigns, function(index, campaign) {
+                        campaignDropdown.append('<option value="' + campaign + '">' + campaign + '</option>');
+                    });
+
+                    // Trigger the change event on page load to update email content and subject
+                    campaignDropdown.change();
+                },
+                error: function(error) {
+                    console.log('Error fetching campaign names:', error);
+                }
+            });
+
+            // Add change event listener to the campaign dropdown
+            $('#selected_campaign').change(function() {
+                var selectedCampaign = $(this).val();
+                updateEmailContentAndSubject(selectedCampaign);
+            });
+
+            // Add submit event listener to the form
+            $('form').submit(function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                // Get the selected campaign
+                var selectedCampaign = $('#selected_campaign').val();
+
+                // Perform your AJAX request for sending/updating the email here
+                $.ajax({
+                    url: '{% url "send_email" %}',
+                    type: 'POST',
+                    data: $('form').serialize(),
+                    success: function(response) {
+                        // Display the success message with the selected campaign
+                        alert('Saved email content for campaign "' + selectedCampaign + '" successfully');
+                    },
+                    error: function(error) {
+                        console.log('Error saving email content:', error);
+                    }
+                });
+            });
+
+            // Add event listeners for style selection
+            $('#fontFamilySelect, #fontSizeSelect').change(function() {
+                var fontFamily = $('#fontFamilySelect').val();
+                var fontSize = $('#fontSizeSelect').val();
+
+                // Apply styles to email content based on user preferences
+                applyStyles({ fontFamily: fontFamily, fontSize: fontSize });
+            });
+        });
+    </script>
+{% endblock %}

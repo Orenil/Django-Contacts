@@ -48,6 +48,19 @@ class Campaign(models.Model):
     
     def __str__(self):
         return self.name
+
+class Email(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_emails')
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, null=True, blank=True)
+    subject = models.CharField(max_length=255)
+    email_content1 = models.TextField()
+    email_content2 = models.TextField()
+    email_content3 = models.TextField()
+    font_family = models.CharField(max_length=50, null=True, blank=True)
+    font_size = models.CharField(max_length=10, null=True, blank=True)
+
+    def __str__(self):
+        return self.subject
     
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

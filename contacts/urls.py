@@ -27,7 +27,10 @@ urlpatterns = [
     path('pause_campaign/', views.pause_campaign, name='pause_campaign'),
     path('get_campaign_status/', views.get_campaign_status, name='get_campaign_status'),
     path('campaign-analytics/', views.campaign_analytics, name='campaign_analytics'),
-    path('get_campaign_summary/', views.get_campaign_summary, name='get_campaign_summary')
+    path('get_campaign_summary/', views.get_campaign_summary, name='get_campaign_summary'),
+    path('email-template/', views.email_template_page, name='email_template'),
+    path('send_email/', views.send_email, name='send_email'),
+    path('get_email_details/', views.get_email_details, name='get_email_details'),
 ]
 
 if settings.DEBUG:

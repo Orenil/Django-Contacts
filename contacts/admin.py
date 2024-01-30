@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django import forms
 from import_export.admin import ImportExportModelAdmin
 from .models import Contact
-from .models import Campaign_Emails, Campaign, Profile
+from .models import Campaign_Emails, Campaign, Profile, Email
 
 class ContactAdmin(ImportExportModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'title', 'company', 'type', 'location', 'level', 'university', 'linkedin')
@@ -32,5 +32,11 @@ class CampaignAdmin(admin.ModelAdmin):
 
 # Register the Campaign model with the custom CampaignAdmin in the admin site
 admin.site.register(Campaign, CampaignAdmin)
+
+class EmailAdmin(admin.ModelAdmin):
+    list_display = ('subject', 'user', 'campaign', 'font_family', 'font_size')  # Add 'campaign' to list_display if needed
+    search_fields = ['subject', 'user__username', 'campaign__name']  # Add 'campaign__name' to search_fields if needed
+
+admin.site.register(Email, EmailAdmin)
 
 admin.site.register(Profile)
