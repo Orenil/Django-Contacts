@@ -355,6 +355,7 @@ def upload_to_campaign_emails(selected_leads, user_id, campaign_name):
                 type=lead.get('type', ''),
                 location=lead.get('location', 'None'),
                 title=lead.get('title', ''),
+                university=lead.get('university', ''),
                 campaign_name=campaign_name
             ))
 
@@ -411,8 +412,9 @@ def campaign_page(request):
     type_filter = request.GET.get('typeFilter')
     company_filter = request.GET.get('companyFilter')
     location_filter = request.GET.get('locationFilter')
+    university_filter = request.GET.get('universityFilter')
     campaign_filter = request.GET.get('campaignFilter')
-
+    
     # Apply filters to campaign emails based on filter parameters
     filter_conditions = Q()
 
@@ -424,6 +426,9 @@ def campaign_page(request):
 
     if location_filter:
         filter_conditions &= Q(location__icontains=location_filter)
+        
+    if university_filter:
+        filter_conditions &= Q(university__icontains=university_filter)
 
     if campaign_filter:
         filter_conditions &= Q(campaign_name__icontains=campaign_filter)
@@ -441,6 +446,7 @@ def campaign_page(request):
             Q(campaign_name__icontains=search_query) |
             Q(type__icontains=search_query) |
             Q(company__icontains=search_query) |
+            Q(university__icontains=search_query) |
             Q(location__icontains=search_query) 
         )
 
@@ -467,12 +473,14 @@ def campaign_page(request):
     distinct_types = all_campaign_emails.values_list('type', flat=True).distinct()
     distinct_companies = all_campaign_emails.values_list('company', flat=True).distinct()
     distinct_locations = all_campaign_emails.values_list('location', flat=True).distinct()
+    distinct_university = all_campaign_emails.values_list('university', flat=True).distinct()
 
     # Pass filter parameters and search query in the context
     filter_params = {
         'typeFilter': type_filter,
         'companyFilter': company_filter,
         'locationFilter': location_filter,
+        'universityFilter': university_filter,
         'campaignFilter': campaign_filter,
         'searchQuery': search_query,
     }
@@ -483,6 +491,7 @@ def campaign_page(request):
         'distinct_types': distinct_types,
         'distinct_companies': distinct_companies,
         'distinct_locations': distinct_locations,
+        'distinct_university': distinct_university,
         'filter_params': filter_params,
     })
     
@@ -493,6 +502,7 @@ def filter_leads(request):
         type_filter = request.POST.get('type')
         company_filter = request.POST.get('company')
         location_filter = request.POST.get('location')
+        university_filter = request.POST.get('university')
         page_number = request.POST.get('page')  # Get the requested page number
 
         # Filter campaign emails based on received parameters
@@ -504,6 +514,8 @@ def filter_leads(request):
             filtered_emails = filtered_emails.filter(company=company_filter)
         if location_filter:
             filtered_emails = filtered_emails.filter(location=location_filter)
+        if university_filter:
+            filtered_emails = filtered_emails.filter(university=location_filter)
 
         # Pagination
         emails_per_page = 50  # Set the number of emails per page

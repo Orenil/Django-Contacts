@@ -15,8 +15,8 @@
     }
 
     .filter-menu select {
-        width: 150px; /* Set a fixed width for dropdowns */
-        margin-right: 10px; /* Adjust the spacing between dropdowns */
+        width: 125px; /* Set a fixed width for dropdowns */
+        margin-right: 5px; /* Adjust the spacing between dropdowns */
     }
 
     .table-container {
@@ -99,26 +99,37 @@
             <!-- Filter Menu -->
             <div class="filter-menu float-right mt-3">
                 <label for="typeFilter">Type:</label>
-                <select id="typeFilter">
+                <select id="typeFilter" name="typeFilter">
                     <option value="">All</option>
                     {% for type in distinct_types %}
                         <option value="{{ type }}">{{ type }}</option>
                     {% endfor %}
                 </select>
+
                 <label for="companyFilter">Company:</label>
-                <select id="companyFilter">
+                <select id="companyFilter" name="companyFilter">
                     <option value="">All</option>
                     {% for company in distinct_companies %}
                         <option value="{{ company }}">{{ company }}</option>
                     {% endfor %}
                 </select>
+
                 <label for="locationFilter">Location:</label>
-                <select id="locationFilter">
+                <select id="locationFilter" name="locationFilter">
                     <option value="">All</option>
                     {% for location in distinct_locations %}
                         <option value="{{ location }}">{{ location }}</option>
                     {% endfor %}
                 </select>
+
+                <label for="universityFilter">University:</label>
+                <select id="universityFilter" name="universityFilter">
+                    <option value="">All</option>
+                    {% for university in distinct_university %}
+                        <option value="{{ university }}">{{ university }}</option>
+                    {% endfor %}
+                </select>
+
                 <button id="applyFilterButton" class="btn btn-primary">Apply Filters</button>
                 <button class="btn btn-danger" id="deleteLeadsButton" type="submit">Delete Leads</button>
             </div>
@@ -147,6 +158,7 @@
                             <th scope="col">Title</th>
                             <th scope="col">Type</th>
                             <th scope="col">Location</th>
+                            <th scope="col">University</th>
                             <th scope="col">Campaign Name</th>
                         </tr>
                     </thead>
@@ -169,6 +181,7 @@
                                 <td>{{ email_entry.title }}</td>
                                 <td>{{ email_entry.type }}</td>
                                 <td>{{ email_entry.location }}</td>
+                                <td>{{ email_entry.university }}</td>
                                 <td>{{ email_entry.campaign_name }}</td>
                             </tr>
                         {% endfor %}
@@ -372,12 +385,14 @@
                 const selectedType = $('#typeFilter').val();
                 const selectedCompany = $('#companyFilter').val();
                 const selectedLocation = $('#locationFilter').val();
+                const selectedUniversity = $('#universityFilter').val();
                 
                 // Construct the new URL with filter parameters
                 const url = new URL(window.location.href);
                 url.searchParams.set('typeFilter', selectedType);
                 url.searchParams.set('companyFilter', selectedCompany);
                 url.searchParams.set('locationFilter', selectedLocation);
+                url.searchParams.set('universityFilter', selectedUniversity);
             
                 // Remove the 'page' parameter from the URL to reset to the first page
                 url.searchParams.delete('page');
@@ -393,6 +408,7 @@
                 $('#typeFilter').val(urlParams.get('typeFilter'));
                 $('#companyFilter').val(urlParams.get('companyFilter'));
                 $('#locationFilter').val(urlParams.get('locationFilter'));
+                $('#universityFilter').val(urlParams.get('universityFilter'));
             
                 // Apply filters when the Apply Filters button is clicked
                 $('#applyFilterButton').on('click', function (event) {

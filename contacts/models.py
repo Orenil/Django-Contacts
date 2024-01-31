@@ -36,6 +36,7 @@ class Campaign_Emails(models.Model):
     type = models.CharField(max_length=100, default='')
     location = models.CharField(max_length=100, default='None')  
     title = models.CharField(max_length=100, default='')
+    university = models.CharField(max_length=200, default='')
     campaign_name = models.CharField(max_length=255, default='')
     
     def __str__(self):

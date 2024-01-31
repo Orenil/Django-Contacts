@@ -17,7 +17,7 @@ class ContactAdmin(ImportExportModelAdmin):
 admin.site.register(Contact, ContactAdmin)
 
 class Campaign_EmailsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'campaign_name')
+    list_display = ('user', 'email','first_name', 'last_name', 'company', 'type', 'location', 'title', 'university', 'campaign_name')
 
 admin.site.register(Campaign_Emails, Campaign_EmailsAdmin)
 
