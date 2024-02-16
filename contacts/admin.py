@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django import forms
 from import_export.admin import ImportExportModelAdmin
 from .models import Contact
-from .models import Campaign_Emails, Campaign, Profile, Email
+from .models import Campaign_Emails, Campaign, Profile, Email, Instructions
 
 class ContactAdmin(ImportExportModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'title', 'company', 'type', 'location', 'level', 'university', 'linkedin')
@@ -40,3 +40,8 @@ class EmailAdmin(admin.ModelAdmin):
 admin.site.register(Email, EmailAdmin)
 
 admin.site.register(Profile)
+
+class InstructionsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'first_name', 'last_name', 'email', 'app_password', 'second_email', 'second_app_password', 'third_email', 'third_app_password')
+
+admin.site.register(Instructions, InstructionsAdmin)

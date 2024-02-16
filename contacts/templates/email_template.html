@@ -7,6 +7,14 @@
 {% block content %}
     <div class="container mt-5">
         <h1>Email Template</h1>
+        <p>
+            It's important to be professional, personalized, have a clear call to action, and display gratitude.
+            This way, prospects can differentiate you from the crowd, appreciate your humility, and want to learn more about you. 
+            Additionally, in case your first email does not land, your follow-ups and persistency will keep you top of mind, and increase your response rate by over 150%.
+            We recommend having an email template for alumni and an email template for non-alumni. Follow-ups should be the same. 
+        </p>
+        <p> You can view a sample of an Email template <a href="https://docs.google.com/document/d/1tobxd3AlldagFk7HNZDmA0ncG7CWheiXdIOzGaRDix4/edit">here</a>. Feel free to customize yours however you want it to appear.</p>
+
         <form method="post" action="{% url 'send_email' %}">
             {% csrf_token %}
 
@@ -73,7 +81,6 @@
     <script>
         // Function to update email content and subject based on the selected campaign
         function updateEmailContentAndSubject(selectedCampaign) {
-            // You may need to adjust this part based on how your data is structured
             $.ajax({
                 url: '{% url "get_email_details" %}',
                 type: 'GET',

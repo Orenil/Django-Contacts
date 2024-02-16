@@ -31,6 +31,7 @@ urlpatterns = [
     path('email-template/', views.email_template_page, name='email_template'),
     path('send_email/', views.send_email, name='send_email'),
     path('get_email_details/', views.get_email_details, name='get_email_details'),
+    path('save-instructions/', views.save_instructions, name='save_instructions'),
 ]
 
 if settings.DEBUG:

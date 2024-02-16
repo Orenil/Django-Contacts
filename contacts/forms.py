@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.formfields import PhoneNumberField
-from .models import Profile
+from .models import Profile, Instructions
 
 class UserRegisterForm(UserCreationForm):
     email = forms.EmailField()
@@ -44,3 +44,8 @@ class ContactSearchForm(forms.Form):
     
 class CampaignEmailSearchForm(forms.Form):
     search_query = forms.CharField(max_length=100, required=False)
+    
+class InstructionsForm(forms.ModelForm):
+    class Meta:
+        model = Instructions
+        fields = ['first_name', 'last_name', 'email', 'app_password']

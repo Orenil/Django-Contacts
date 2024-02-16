@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm
+from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm, InstructionsForm
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required
@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Contact, Campaign_Emails, Campaign, Email
+from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
@@ -74,9 +74,11 @@ def profile(request):
     }
     return render(request, 'profile.html', context)
 
+@login_required
 def home(request):
-    home = Contact.objects.all()
-    return render(request, 'home.html')
+    # Retrieve existing Instructions data for the current user
+    instructions = Instructions.objects.filter(user=request.user).first()
+    return render(request, 'home.html', {'instructions': instructions})
 
 @login_required
 def contact_list(request):
@@ -841,3 +843,48 @@ def get_email_details(request):
             })
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@login_required
+def save_instructions(request):
+    if request.method == 'POST':
+        instruction_id = request.POST.get('instruction_id')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        app_password = request.POST.get('app_password')
+        second_email = request.POST.get('second_email')
+        second_app_password = request.POST.get('second_app_password')
+        third_email = request.POST.get('third_email')
+        third_app_password = request.POST.get('third_app_password')
+
+        # If instruction_id exists, update the existing data
+        if instruction_id:
+            instruction = Instructions.objects.get(pk=instruction_id)
+            instruction.first_name = first_name
+            instruction.last_name = last_name
+            instruction.email = email
+            instruction.app_password = app_password
+            instruction.second_email = second_email
+            instruction.second_app_password = second_app_password
+            instruction.third_email = third_email
+            instruction.third_app_password = third_app_password
+            instruction.save()
+        else:
+            # If instruction_id does not exist, create a new entry
+            Instructions.objects.create(
+                user=request.user,
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                app_password=app_password,
+                second_email=second_email,
+                second_app_password=second_app_password,
+                third_email=third_email,
+                third_app_password=third_app_password
+            )
+
+        return redirect('home')  # Redirect to the home page after saving
+
+    return redirect('home')  # Redirect to the home page if not a POST request
+
+

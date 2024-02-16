@@ -13,6 +13,88 @@
                 and receive the best technical and behavioral interview training in the world. Primarily by early career
                 professionals for early career professionals.
             </p>
+            <h3><small>Instructions to set up automated Gmail Access</small></h3>
+            <ol>
+                <li>On your computer, open Gmail.</li>
+                <li>Click the gear icon in the top right corner.</li>
+                <li>Click All Settings.</li>
+                <li>Click the Forwarding and POP/IMAP tab.</li>
+                <li>In the "IMAP Access" section, select Enable IMAP.</li>
+                <li>Click Save Changes.</li>
+                <li>Go to your Google Account's Security Settings</li>
+                <li>Enable 2-step verification</li>
+                <li>Create an App password</li>
+                <li>Select app -> Other</li>
+                <li>Set App name as "Follow-Up Networking"</li>
+                <li>Paste the “App Password” into the textbox below</li>
+                <li>Press save</li>
+            </ol>
+            <h3><small>Fill the form below to get started</small></h3>
+            <form method="post" action="{% url 'save_instructions' %}">
+                {% csrf_token %}
+                <!-- Hidden field for instruction ID -->
+                <input type="hidden" name="instruction_id" value="{{ instructions.id }}">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="first_name">First Name:</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ instructions.first_name }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="last_name">Last Name:</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ instructions.last_name }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ instructions.email }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="app_password">App Password:</label>
+                            <input type="password" class="form-control" id="app_password" name="app_password" value="{{ instructions.app_password }}" required>
+                        </div>
+                    </div>
+                </div>
+                <!-- Additional sets of text boxes -->
+                <!-- Second email -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="second_email">Second Email:</label>
+                            <input type="email" class="form-control" id="second_email" name="second_email" value="{{ instructions.second_email }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="second_app_password">Second App Password:</label>
+                            <input type="password" class="form-control" id="second_app_password" name="second_app_password" value="{{ instructions.second_app_password }}">
+                        </div>
+                    </div>
+                </div>
+                <!-- Third email -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="third_email">Third Email:</label>
+                            <input type="email" class="form-control" id="third_email" name="third_email" value="{{ instructions.third_email }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="third_app_password">Third App Password:</label>
+                            <input type="password" class="form-control" id="third_app_password" name="third_app_password" value="{{ instructions.third_app_password }}">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
         </div>
     </div>
 {% endblock %}
+
+

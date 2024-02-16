@@ -63,6 +63,20 @@ class Email(models.Model):
     def __str__(self):
         return self.subject
     
+class Instructions(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    first_name = models.TextField()
+    last_name = models.TextField()
+    email = models.TextField()
+    app_password = models.TextField()
+    second_email = models.TextField(default='')  # New field for second email
+    second_app_password = models.TextField(default='')  # New field for second app password
+    third_email = models.TextField(default='')  # New field for third email
+    third_app_password = models.TextField(default='')  # New field for third app password
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+    
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default.jpg', upload_to='profile_pics')
