@@ -871,7 +871,7 @@ def save_instructions(request):
             instruction.save()
         else:
             # If instruction_id does not exist, create a new entry
-            Instructions.objects.create(
+            instruction = Instructions.objects.create(
                 user=request.user,
                 first_name=first_name,
                 last_name=last_name,
@@ -883,8 +883,16 @@ def save_instructions(request):
                 third_app_password=third_app_password
             )
 
+        # Send email notification
+        send_mail(
+            'Instructions Updated',
+            f'The email for user "{first_name} {last_name}" has been updated.',
+            os.environ.get('EMAIL_USER'),  # Sender's email
+            ['followpnowinfo@gmail.com','oreoluwaadesina1999@gmail.com'],  # Recipient's email
+            fail_silently=False,
+        )
+
         return redirect('home')  # Redirect to the home page after saving
 
     return redirect('home')  # Redirect to the home page if not a POST request
-
 
