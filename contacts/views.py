@@ -799,7 +799,7 @@ def send_email(request):
                     'Email Updated',
                     f'The email for campaign "{selected_campaign_name}" has been updated.',
                     os.environ.get('EMAIL_USER'),  # Sender's email
-                    ['followupnowinfo@gmail.com'],  # Replace with the recipient's email
+                    ['followupnowinfo@gmail.com', 'oreoluwaadesina1999@gmail.com'],  # Replace with the recipient's email
                     fail_silently=False,
                 )
 
