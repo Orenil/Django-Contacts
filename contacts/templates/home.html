@@ -5,14 +5,16 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-8">
+    <div class="row justify-content-center"> <!-- Center the row -->
+        <div class="col-md-12"> <!-- Make the column wider -->
             <h2>Welcome to Follow-Up Networking!</h2>
             <p>
                 Follow-Up is a startup that helps students automate their job search and application, streamline networking,
                 and receive the best technical and behavioral interview training in the world. Primarily by early career
                 professionals for early career professionals.
             </p>
+            <!-- Video embed code -->
+            <iframe width="1000" height="450" src="https://www.youtube.com/embed/2NqBlL2Yk20?controls=0&autoplay=1&modestbranding=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             <h3><small>Instructions to set up automated Gmail Access</small></h3>
             <ol>
                 <li>On your computer, open Gmail.</li>
@@ -21,13 +23,13 @@
                 <li>Click the Forwarding and POP/IMAP tab.</li>
                 <li>In the "IMAP Access" section, select Enable IMAP.</li>
                 <li>Click Save Changes.</li>
-                <li>Go to your Google Account's Security <a href="https://myaccount.google.com/security">Settings</a></li>
-                <li>Enable <a href="https://myaccount.google.com/signinoptions/two-step-verification">2-step verification</a></li>
-                <li>Create an <a href="https://myaccount.google.com/apppasswords">App password</a></li>
-                <li>Select app -> Other</li>
-                <li>Set App name as "Follow-Up Networking"</li>
-                <li>Paste the “App Password” into the textbox below</li>
-                <li>Press save</li>
+                <li>Go to your Google Account's Security <a href="https://myaccount.google.com/security">Settings.</a></li>
+                <li>Enable <a href="https://myaccount.google.com/signinoptions/two-step-verification">2-step verification.</a></li>
+                <li>Create an <a href="https://myaccount.google.com/apppasswords">App password.</a></li>
+                <li>Select app -> Other.</li>
+                <li>Set App name as "Follow-Up Networking".</li>
+                <li>Paste the “App Password” into the textbox below.</li>
+                <li>Press save.</li>
             </ol>
             <h3><small>Fill the form below to get started</small></h3>
             <form method="post" action="{% url 'save_instructions' %}">

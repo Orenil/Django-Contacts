@@ -793,19 +793,9 @@ def send_email(request):
                 email.font_family = font_family
                 email.font_size = font_size
                 email.save()
-
-                # Send email notification
-                send_mail(
-                    'Email Updated',
-                    f'The email for campaign "{selected_campaign_name}" has been updated.',
-                    os.environ.get('EMAIL_USER'),  # Sender's email
-                    ['followupnowinfo@gmail.com', 'oreoluwaadesina1999@gmail.com'],  # Replace with the recipient's email
-                    fail_silently=False,
-                )
-
             else:
                 # Create a new email
-                Email.objects.create(
+                email = Email.objects.create(
                     user=request.user,
                     subject=subject,
                     email_content1=email_content1,
@@ -815,6 +805,15 @@ def send_email(request):
                     font_size=font_size,
                     campaign=selected_campaign
                 )
+
+            # Send email notification
+            send_mail(
+                'Email Updated' if email.pk else 'New Email Created',
+                f'The email for campaign "{selected_campaign_name}" has been updated.' if email.pk else f'A new email for campaign "{selected_campaign_name}" has been created.',
+                os.environ.get('EMAIL_USER'),  # Sender's email
+                ['followupnowinfo@gmail.com', 'oreoluwaadesina1999@gmail.com'],  
+                fail_silently=False,
+            )
 
             return HttpResponseRedirect(reverse('email_template'))
 
@@ -885,12 +884,15 @@ def save_instructions(request):
 
         # Send email notification
         send_mail(
-            'Instructions Updated',
-            f'The email for user "{first_name} {last_name}" has been updated.',
+            'Details Updated',
+            f'The profile details for user "{first_name} {last_name}" has been updated.',
             os.environ.get('EMAIL_USER'),  # Sender's email
             ['followpnowinfo@gmail.com','oreoluwaadesina1999@gmail.com'],  # Recipient's email
             fail_silently=False,
         )
+
+        # Add success message
+        messages.success(request, f'Great! Your details have been saved, please proceed to creating your Email Template')
 
         return redirect('home')  # Redirect to the home page after saving
 
