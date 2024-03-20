@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('about/', views.about, name='about'),
     path('register/', views.register, name='register'),
     path('profile/', views.profile, name='profile'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
@@ -32,6 +33,7 @@ urlpatterns = [
     path('send_email/', views.send_email, name='send_email'),
     path('get_email_details/', views.get_email_details, name='get_email_details'),
     path('save-instructions/', views.save_instructions, name='save_instructions'),
+    path('send_email/', views.send_email, name='send_email'),
 ]
 
 if settings.DEBUG:

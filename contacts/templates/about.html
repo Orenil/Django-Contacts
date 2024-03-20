@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbn7FcL5ZbDyWh45vm_ervZKmibJk2l93D3g&usqp=CAU" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'main2.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom CSS for About Page */
+        .popup {
+            display: none;
+        }
+
+        .about-section {
+            background-color: #ffffff; /* White background */
+            padding: 60px 0;
+        }
+
+        .about-section .inner-container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+
+        .about-section h1 {
+            margin-bottom: 30px;
+            font-size: 55px;
+            color: #14203E;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+
+        .about-section p {
+            font-size: 18px;
+            color: #14203E;
+            line-height: 1.6;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+
+        .about-section video {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="w-full items-center flex flex-col justify-center">
+    <nav class="flex relative container items-center mx-auto justify-between pt-6 px-11">
+        <!-- Navigation left hand side -->
+        <div id="menu-btn" class="hidden flex-col md:flex absolute float-right bg-freetrial md:static md:flex-row md:bg-inherit md:mt-0 md:space-x-14 ml-28 mt-72 rounded-xl px-10 mx-auto items-center pt-2 pb-2">
+            <a href="{% url 'home' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Home</a>
+            <a href="{% url 'about' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">About</a>
+            <a href="{% url 'email_template' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Template</a>
+            <a href="{% url 'contact-list' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Leads</a>
+            <a href="{% url 'campaign_page' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Campaign</a>
+            <a href="{% url 'campaign_analytics' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Analytics</a>
+        </div>
+        <!-- Navigation right hand side -->
+        <div class="flex flex-row justify-center items-center">
+            {% if user.is_authenticated %}
+                <button class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 md:mr-4 font-IBM hover:bg-freetrial hover:text-loginbutton">Profile</button>
+                <a href="{% url 'logout' %}" class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 text-black font-IBM hover:bg-freetrial hover:text-loginbutton md:w-44 flex justify-center items-center">Logout</a>
+            {% else %}
+                <button class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 md:mr-4 font-IBM hover:bg-freetrial hover:text-loginbutton">Login</button>
+                <a href="{% url 'register' %}" class="hidden md:flex bg-freetrial px-8 rounded-xl py-3 font-IBM text-white hover:bg-loginbutton hover:text-freetrial md:w-44 flex justify-center items-center">Start Free Trial</a>
+            {% endif %}
+        </div>
+        <div id="button" class="md:hidden hamburger flex flex-col items-center justify-center focus:outline-none">
+            <span class="top"></span>
+            <span class="mid"></span>
+            <span class="bottom"></span>
+        </div>
+    </nav>
+    
+    <!-- HTML for the pop-up -->
+    <!-- Pop-up at the top of the page -->
+    <div id="popup" class="popup fixed top-0 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded">
+        Saved successfully!
+    </div>
+    
+    <!-- Visible line with margin -->
+    <div class="w-full border-b border-gray-300 mt-4"></div>
+    
+    <div class="about-section">
+        <div class="inner-container">
+            <h1>What we do</h1>
+            <p>Follow-Up is a dynamic startup dedicated to empowering students in their job search journey. Our platform offers cutting-edge automation tools to streamline job applications, personalized networking solutions, and unparalleled training in both technical and behavioral interview skills. Crafted by early career professionals for early career professionals, Follow-Up puts networking at the forefront, connecting aspiring talents with industry insiders and mentors, fostering meaningful connections that propel careers forward.</p>
+            <div class="flex justify-center mt-6">
+                <iframe class="rounded-lg" width="600" height="315" src="https://www.youtube.com/embed/2NqBlL2Yk20?controls=0&modestbranding=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>  
+    </div>
+    
+    <div class="get-started-section bg-white py-8">
+        <div class="inner-container">
+            <h2 class="text-lg font-semibold text-center mb-4">Get Started</h2>
+            <p class="text-sm text-center">Ready to get started? Fill out the form below and start networking!</p>
+            
+            <!-- Text and link for app password instructions -->
+            <div class="text-center mt-4">
+                <p class="text-xs inline">Not sure how to get your app password? </p>
+                <a href="#" class="text-xs text-blue-500 hover:underline inline" onclick="openModal()">Click here for instructions</a>
+            </div>
+            <!-- Form for getting started -->
+            <form method="post" action="{% url 'save_instructions' %}" class="mt-6 max-w-md mx-auto">
+                {% csrf_token %}
+                <!-- Hidden field for instruction ID -->
+                <input type="hidden" name="instruction_id" value="{{ instruction.id }}">
+                <div class="grid grid-cols-1 gap-4">
+                    <input type="text" placeholder="First Name" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="first_name" value="{{ instruction.first_name }}" required>
+                    <input type="text" placeholder="Last Name" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="last_name" value="{{ instruction.last_name }}" required>
+                    <input type="email" placeholder="First Email" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="email" value="{{ instruction.email }}" required>
+                    <input type="password" placeholder="App password One" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="app_password" value="{{ instruction.app_password }}" required>
+                    <input type="email" placeholder="Second Email (Optional)" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="second_email" value="{{ instruction.second_email }}">
+                    <input type="password" placeholder="App password Two (Optional)" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="second_app_password" value="{{ instruction.second_app_password }}">
+                    <input type="email" placeholder="Third Email (Optional)" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="third_email" value="{{ instruction.third_email }}">
+                    <input type="password" placeholder="App password Three (Optional)" class="block w-full px-3 py-2 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500" name="third_app_password" value="{{ instruction.third_app_password }}">
+                    
+                    <button type="submit" class="block w-full bg-blue-500 text-white font-semibold rounded px-3 py-2">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal hidden fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 z-50">
+        <div class="modal-content bg-white w-1/2 mx-auto my-12 p-6 rounded-lg relative">
+            <button class="absolute top-0 right-0 p-4 cursor-pointer text-lg" onclick="closeModal()">&times;</button>
+            <h2 class="text-lg font-semibold mb-4">App Password Instructions</h2>
+            <ul class="list-disc pl-4">
+                <li>On your computer, open Gmail.</li>
+                <li>Click the gear icon in the top right corner.</li>
+                <li>Click All Settings.</li>
+                <li>Click the Forwarding and POP/IMAP tab.</li>
+                <li>In the "IMAP Access" section, select Enable IMAP.</li>
+                <li>Click Save Changes.</li>
+                <li>Go to your Google Account's Security <a href="https://myaccount.google.com/security" class="text-blue-500">Settings.</a></li>
+                <li>Enable <a href="https://myaccount.google.com/signinoptions/two-step-verification" class="text-blue-500">2-step verification.</a></li>
+                <li>Create an <a href="https://myaccount.google.com/apppasswords" class="text-blue-500">App password.</a></li>
+                <li>Select app -> Other.</li>
+                <li>Set App name as "Follow-Up Networking".</li>
+                <li>Paste the “App Password” into the textbox below.</li>
+                <li>Press submit.</li>
+            </ul>
+        </div>
+    </div>
+    
+</body>
+</html>
+
+<script>
+    function openModal() {
+        document.getElementById("myModal").classList.remove("hidden");
+    }
+
+    function closeModal() {
+        document.getElementById("myModal").classList.add("hidden");
+    }
+
+    // Function to show the pop-up and hide it after 2 seconds
+    function showPopup() {
+        var popup = document.getElementById("popup");
+        popup.style.display = "block";
+        setTimeout(function(){
+            popup.style.display = "none";
+        }, 4000); // 4000 milliseconds = 4 seconds
+    }
+
+    // Call the showPopup function when the page loads
+    window.onload = function() {
+        // Check if the URL contains a success query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success')) {
+            showPopup();
+        }
+    };
+</script>

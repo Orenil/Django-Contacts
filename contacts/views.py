@@ -22,6 +22,13 @@ from django.contrib.auth.models import User
 from .forms import UserRegisterForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email import encoders
+import os
+import smtplib
 from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNameFromContactId, getCompanyNameFromContactId, getTypeFromContactId, getTitleFromContactId
 import csv
 import json
@@ -30,6 +37,9 @@ import logging
 from datetime import date
 import os
 
+def about(request):
+    return render(request, 'about.html')
+
 def login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, request.POST)
@@ -37,7 +47,7 @@ def login(request):
             user = form.get_user()
             auth_login(request, user)
             # Redirect to a specific URL after successful login
-            return redirect('home')
+            return redirect('about')
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
@@ -846,7 +856,13 @@ def get_email_details(request):
 @login_required
 def save_instructions(request):
     if request.method == 'POST':
-        instruction_id = request.POST.get('instruction_id')
+        existing_instruction = Instructions.objects.filter(user=request.user).first()
+
+        if existing_instruction:
+            instruction_id = existing_instruction.pk
+        else:
+            instruction_id = None
+
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
@@ -856,7 +872,6 @@ def save_instructions(request):
         third_email = request.POST.get('third_email')
         third_app_password = request.POST.get('third_app_password')
 
-        # If instruction_id exists, update the existing data
         if instruction_id:
             instruction = Instructions.objects.get(pk=instruction_id)
             instruction.first_name = first_name
@@ -869,7 +884,6 @@ def save_instructions(request):
             instruction.third_app_password = third_app_password
             instruction.save()
         else:
-            # If instruction_id does not exist, create a new entry
             instruction = Instructions.objects.create(
                 user=request.user,
                 first_name=first_name,
@@ -882,7 +896,6 @@ def save_instructions(request):
                 third_app_password=third_app_password
             )
 
-        # Send email notification
         send_mail(
             'Details Updated',
             f'The profile details for user "{first_name} {last_name}" has been updated.',
@@ -891,10 +904,55 @@ def save_instructions(request):
             fail_silently=False,
         )
 
-        # Add success message
-        messages.success(request, f'Great! Your details have been saved, please proceed to creating your Email Template')
+        # Redirect to the current page with a success query parameter
+        return HttpResponseRedirect(reverse('about') + '?success=true')
 
-        return redirect('home')  # Redirect to the home page after saving
+    return redirect('about')
 
-    return redirect('home')  # Redirect to the home page if not a POST request
+@csrf_exempt
+def send_email(request):
+    if request.method == 'POST':
+        # Get data from the frontend
+        mail_subject = request.POST.get('mail_subject')
+        mail_content_html = request.POST.get('mail_content_html')
+        recepients_mail_list = request.POST.getlist('recepients_mail_list[]')  # Extract recipient list as array
 
+        # Print recipient list for debugging
+        print("Recipient list:", recepients_mail_list)
+        print("Mail Subject:", mail_subject )
+        print("Mail_Body", mail_content_html)
+        
+        # Fetch email and password from Instructions model
+        try:
+            mail_uname = Instructions.email
+            mail_pwd = Instructions.app_password
+            from_email = Instructions.Email  # Using the same email as sender
+        except Instructions.DoesNotExist:
+            return JsonResponse({'error': 'Email not found'}, status=404)
+
+        # Mail server parameters
+        smtp_host = "smtp.gmail.com"
+        smtp_port = 587
+
+        try:
+            # Create message object
+            msg = MIMEMultipart()
+            msg['From'] = from_email
+            msg['To'] = ','.join(recepients_mail_list)
+            msg['Subject'] = mail_subject
+            msg.attach(MIMEText(mail_content_html, 'html'))
+
+            # Print email message for debugging
+            print("Email message:", msg.as_string())
+
+            # Send email
+            with smtplib.SMTP(smtp_host, smtp_port) as s:
+                s.starttls()
+                s.login(mail_uname, mail_pwd)
+                s.send_message(msg)
+
+            return JsonResponse({'message': 'Email sent successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

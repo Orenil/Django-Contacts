@@ -1,104 +1,59 @@
-{% extends 'base.html' %}
-
-{% block title %}
-    <title>Follow-Up Networking - Home</title>
-{% endblock %}
-
-{% block content %}
-    <div class="row justify-content-center"> <!-- Center the row -->
-        <div class="col-md-12"> <!-- Make the column wider -->
-            <h2>Welcome to Follow-Up Networking!</h2>
-            <p>
-                Follow-Up is a startup that helps students automate their job search and application, streamline networking,
-                and receive the best technical and behavioral interview training in the world. Primarily by early career
-                professionals for early career professionals.
-            </p>
-            <!-- Video embed code -->
-            <div class="rounded"> <!-- Add rounded corners to the video -->
-                <iframe class="rounded" width="800" height="450" src="https://www.youtube.com/embed/2NqBlL2Yk20?controls=0&modestbranding=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-            <h3><small>Instructions to set up automated Gmail Access</small></h3>
-            <ol>
-                <li>On your computer, open Gmail.</li>
-                <li>Click the gear icon in the top right corner.</li>
-                <li>Click All Settings.</li>
-                <li>Click the Forwarding and POP/IMAP tab.</li>
-                <li>In the "IMAP Access" section, select Enable IMAP.</li>
-                <li>Click Save Changes.</li>
-                <li>Go to your Google Account's Security <a href="https://myaccount.google.com/security">Settings.</a></li>
-                <li>Enable <a href="https://myaccount.google.com/signinoptions/two-step-verification">2-step verification.</a></li>
-                <li>Create an <a href="https://myaccount.google.com/apppasswords">App password.</a></li>
-                <li>Select app -> Other.</li>
-                <li>Set App name as "Follow-Up Networking".</li>
-                <li>Paste the “App Password” into the textbox below.</li>
-                <li>Press save.</li>
-            </ol>
-            <h3><small>Fill the form below to get started</small></h3>
-            <form method="post" action="{% url 'save_instructions' %}">
-                {% csrf_token %}
-                <!-- Hidden field for instruction ID -->
-                <input type="hidden" name="instruction_id" value="{{ instructions.id }}">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="first_name">First Name:</label>
-                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ instructions.first_name }}" required>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="last_name">Last Name:</label>
-                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ instructions.last_name }}" required>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ instructions.email }}" required>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="app_password">App Password:</label>
-                            <input type="password" class="form-control" id="app_password" name="app_password" value="{{ instructions.app_password }}" required>
-                        </div>
-                    </div>
-                </div>
-                <!-- Additional sets of text boxes -->
-                <!-- Second email -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="second_email">Second Email:</label>
-                            <input type="email" class="form-control" id="second_email" name="second_email" value="{{ instructions.second_email }}">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="second_app_password">Second App Password:</label>
-                            <input type="password" class="form-control" id="second_app_password" name="second_app_password" value="{{ instructions.second_app_password }}">
-                        </div>
-                    </div>
-                </div>
-                <!-- Third email -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="third_email">Third Email:</label>
-                            <input type="email" class="form-control" id="third_email" name="third_email" value="{{ instructions.third_email }}">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="third_app_password">Third App Password:</label>
-                            <input type="password" class="form-control" id="third_app_password" name="third_app_password" value="{{ instructions.third_app_password }}">
-                        </div>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </form>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="shortcut icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbn7FcL5ZbDyWh45vm_ervZKmibJk2l93D3g&usqp=CAU" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'main2.css' %}">
+    <script src="{% static 'index.js' %}"></script>
+</head>
+<body class="w-full items-center flex flex-col justify-center">
+    <nav class="flex relative container items-center mx-auto justify-between pt-6 px-11">
+        <div id="menu-btn" class="hidden flex-col md:flex absolute float-right bg-freetrial md:static md:flex-row md:bg-inherit md:mt-0 md:space-x-14 ml-28 mt-72 rounded-xl px-10 mx-auto items-center pt-2 pb-2">
+            <a href="" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Home</a>
+            <a href="{% url 'about' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">About</a>
+            <a href="{% url 'email_template' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Template</a>
+            <a href="{% url 'contact-list' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Leads</a>
+            <a href="{% url 'campaign_page' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Campaign</a>
+            <a href="{% url 'campaign_analytics' %}" class="font-normal text-lg font-IBM hover:opacity-10 hover:line-through pb-2 border-b-2 w-full text-center md:border-b-0">Analytics</a>
         </div>
+        <!-- Navigation right hand side -->
+        <div class="flex flex-row justify-center items-center">
+            {% if user.is_authenticated %}
+                <button class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 md:mr-4 font-IBM hover:bg-freetrial hover:text-loginbutton">Profile</button>
+                <a href="{% url 'logout' %}" class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 text-black font-IBM hover:bg-freetrial hover:text-loginbutton md:w-44 flex justify-center items-center">Logout</a>
+            {% else %}
+                <button class="hidden md:flex bg-loginbutton px-8 rounded-xl py-3 md:mr-4 font-IBM hover:bg-freetrial hover:text-loginbutton">Login</button>
+                <a href="{% url 'register' %}" class="hidden md:flex bg-freetrial px-8 rounded-xl py-3 font-IBM text-white hover:bg-loginbutton hover:text-freetrial md:w-44 flex justify-center items-center">Start Free Trial</a>
+            {% endif %}
+        </div>
+        <div id="button" class="md:hidden hamburger flex flex-col items-center justify-center focus:outline-none">
+            <span class="top"></span>
+            <span class="mid"></span>
+            <span class="bottom"></span>
+        </div>
+    </nav>
+    <div class="border-b-2 mt-6 w-screen"></div>
+
+    <section id="cta" class="items-center flex flex-col border-b-2 w-screen">
+        <h1 class="font-IBM text-freetrial font-bold text-6xl items-center lg:max-w-xl mt-32 text-center">A modern way to build connections.</h1>
+        <p class="font-IBM text-freetrial md:max-w-lg text-center text-xl font-medium mt-8">We enable professionals to forge meaningful connections and advance their careers through intuitive networking solutions.</p>
+        <a href="{% url 'about' %}" class="mt-10 mb-32">
+            <button class="bg-freetrial py-6 px-10 rounded-xl text-white font-IBM hover:opacity-30">Learn more</button>
+        </a>
+    </section>
+
+    <section id="car" class="flex flex-col items-center mx-auto
+    justify-center mb-16">
+    <div class="my-8 flex items-center justify-center">
+        <div class="line"></div>
+        <p class="font-IBM font-semibold text-sm text-freetrial pr-2 pl-2">We help you achieve that dream</p>
+        <div class="line"></div>
     </div>
-{% endblock %}
-
-
+    </div>
+    </section>
+</body>
+</html>
