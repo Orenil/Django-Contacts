@@ -1,0 +1,47 @@
+@import "tailwindcss/base.css";
+@import "tailwindcss/components.css";
+@import "tailwindcss/utilities.css";
+
+* {
+    transition: all 0.25s ease;
+}
+
+.line {
+    height: 1px;
+    width: 200px;
+    background-color: hsla(223, 51%, 16%, 0.2);
+}
+
+.top,
+.mid,
+.bottom {
+    background-color: #14203E;
+    width: 25px;
+    height: 3px;
+}
+
+.mid{
+    transform: translateY(4px);
+}
+
+.bottom {
+    transform: translateY(8px);
+}
+
+.clicked .mid {
+    display: none;
+}
+
+.clicked .top {
+    transform: rotate(45deg) translate(3px);
+}
+
+.clicked .bottom {
+    transform: rotate(-45deg) translate(3px);
+}
+
+@media(max-width: 578px) {
+    .line {
+        width: 100px;
+    }
+}
