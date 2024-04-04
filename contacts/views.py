@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.core import serializers as django_serializers
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, ContactSearchForm, InstructionsForm
@@ -11,7 +13,21 @@ from django.views.decorators.http import require_POST
 from django.middleware.csrf import get_token
 from django.http import JsonResponse, HttpResponseServerError
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from rest_framework import status
 from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
+from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer
+from rest_framework.authentication import SessionAuthentication
+from knox.auth import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from knox.views import LoginView as KnoxLoginView
+from knox.views import LogoutView as KnoxLogoutView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.decorators import authentication_classes, permission_classes
+from knox.models import AuthToken
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.contrib.auth import login as auth_login
@@ -40,29 +56,31 @@ import os
 def about(request):
     return render(request, 'about.html')
 
-def login(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            auth_login(request, user)
-            # Redirect to a specific URL after successful login
-            return redirect('about')
-    else:
-        form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+class LoginAPIView(KnoxLoginView):
+    permission_classes = []
 
-def register(request):
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Your Account has been created! Please login')            
-            return redirect('login')
-    else:
-        form = UserRegisterForm()
-    return render(request, 'register.html', {'form': form})
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        auth_login(request, user)
+        return super(LoginAPIView, self).post(request, format=None)
+
+class LogoutAPIView(KnoxLogoutView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        # Logout the user and invalidate the token
+        request._auth.delete()
+        return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+
+class UserRegisterAPIView(APIView):
+    def post(self, request):
+        serializer = UserRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Your account has been created!'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @login_required
 def profile(request):
@@ -84,104 +102,99 @@ def profile(request):
     }
     return render(request, 'profile.html', context)
 
-@login_required
-def home(request):
-    # Retrieve existing Instructions data for the current user
-    instructions = Instructions.objects.filter(user=request.user).first()
-    return render(request, 'home.html', {'instructions': instructions})
+class HomeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        # Retrieve existing Instructions data for the current user
+        instructions = Instructions.objects.filter(user=request.user).first()
+        serializer = InstructionsSerializer(instructions)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-@login_required
-def contact_list(request):
-    # Filter campaigns associated with the logged-in user
-    user_campaigns = Campaign.objects.filter(user=request.user)
 
-    # Extract campaign names as a list
-    campaign_names = list(user_campaigns.values_list('name', flat=True))
+class ContactListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        # Ensure the user is authenticated before accessing request.user
+        user_campaigns = Campaign.objects.filter(user=request.user)
+        campaign_names = list(user_campaigns.values_list('name', flat=True))
+        distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
+        distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
+        distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
+        distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
+        distinct_university = Contact.objects.order_by('university').values_list('university', flat=True).distinct()
+        
+        contacts = Contact.objects.all()
+        query = request.GET.get('q')
+        if query:
+            contacts = contacts.filter(
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query) |
+                Q(title__icontains=query) |
+                Q(company__icontains=query) |
+                Q(type__icontains=query) |
+                Q(location__icontains=query) |
+                Q(level__icontains=query) |
+                Q(university__icontains=query) |
+                Q(linkedin__icontains=query)
+            )
 
-    distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
-    distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
-    distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
-    distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
-    distinct_university = Contact.objects.order_by('university').values_list('university', flat=True).distinct()
+        type_filter = request.GET.get('typeFilter')
+        company_filter = request.GET.get('companyFilter')
+        location_filter = request.GET.get('locationFilter')
+        level_filter = request.GET.get('levelFilter')
+        university_filter = request.GET.get('universityFilter')
 
-    # Get all contacts
-    contacts = Contact.objects.all()
+        filter_conditions = Q()
 
-    # Apply search query
-    query = request.GET.get('q')
-    if query:
-        contacts = contacts.filter(
-            Q(first_name__icontains=query) |
-            Q(last_name__icontains=query) |
-            Q(email__icontains=query) |
-            Q(title__icontains=query) |
-            Q(company__icontains=query) |
-            Q(type__icontains=query) |
-            Q(location__icontains=query) |
-            Q(level__icontains=query) |
-            Q(university__icontains=query) |
-            Q(linkedin__icontains=query)
-        )
+        if type_filter:
+            filter_conditions &= Q(type__icontains=type_filter)
 
-    # Apply filters based on filter parameters
-    type_filter = request.GET.get('typeFilter')
-    company_filter = request.GET.get('companyFilter')
-    location_filter = request.GET.get('locationFilter')
-    level_filter = request.GET.get('levelFilter')
-    university_filter = request.GET.get('universityFilter')
+        if company_filter:
+            filter_conditions &= Q(company__icontains=company_filter)
 
-    filter_conditions = Q()
+        if location_filter:
+            filter_conditions &= Q(location__icontains=location_filter)
 
-    if type_filter:
-        filter_conditions &= Q(type__icontains=type_filter)
+        if level_filter:
+            filter_conditions &= Q(level__icontains=level_filter)
 
-    if company_filter:
-        filter_conditions &= Q(company__icontains=company_filter)
+        if university_filter:
+            filter_conditions &= Q(university__icontains=university_filter)
 
-    if location_filter:
-        filter_conditions &= Q(location__icontains=location_filter)
+        contacts = contacts.filter(filter_conditions)
 
-    if level_filter:
-        filter_conditions &= Q(level__icontains=level_filter)
+        items_per_page = 50
+        page = request.GET.get('page', 1)
 
-    if university_filter:
-        filter_conditions &= Q(university__icontains=university_filter)
+        paginator = Paginator(contacts, items_per_page)
+        try:
+            contacts = paginator.page(page)
+        except PageNotAnInteger:
+            contacts = paginator.page(1)
+        except EmptyPage:
+            contacts = paginator.page(paginator.num_pages)
 
-    # Combine search query and filters
-    contacts = contacts.filter(filter_conditions)
+        filter_params = {
+            'typeFilter': type_filter,
+            'companyFilter': company_filter,
+            'locationFilter': location_filter,
+            'levelFilter': level_filter,
+            'universityFilter': university_filter,
+        }
 
-    # Pagination
-    items_per_page = 50
-    page = request.GET.get('page', 1)
-
-    paginator = Paginator(contacts, items_per_page)
-    try:
-        contacts = paginator.page(page)
-    except PageNotAnInteger:
-        contacts = paginator.page(1)
-    except EmptyPage:
-        contacts = paginator.page(paginator.num_pages)
-
-    # Pass filter parameters in the context
-    filter_params = {
-        'typeFilter': type_filter,
-        'companyFilter': company_filter,
-        'locationFilter': location_filter,
-        'levelFilter': level_filter,
-        'universityFilter': university_filter,
-    }
-
-    return render(request, 'contact_list.html', {
-        'contacts': contacts,
-        'distinct_types': distinct_types,
-        'distinct_companies': distinct_companies,
-        'distinct_locations': distinct_locations,
-        'distinct_levels': distinct_levels,
-        'distinct_university': distinct_university,
-        'campaign_names': campaign_names,
-        'query': query,  # Pass the query to the template for display
-        'filter_params': filter_params,  # Pass filter parameters to maintain consistency
-    })
+        serializer = ContactSerializer(contacts, many=True)
+        return Response({
+            'contacts': serializer.data,
+            'distinct_types': distinct_types,
+            'distinct_companies': distinct_companies,
+            'distinct_locations': distinct_locations,
+            'distinct_levels': distinct_levels,
+            'distinct_university': distinct_university,
+            'campaign_names': campaign_names,
+            'query': query,
+            'filter_params': filter_params,
+        })
 
 @login_required
 def get_campaign_names(request):
@@ -192,93 +205,6 @@ def get_campaign_names(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-def upload_csv(request):
-    if request.method == 'POST' and request.FILES.get('csv_file'):  
-        csv_file = request.FILES['csv_file']
-
-        if not csv_file.name.endswith('.csv'):
-            messages.error(request, 'Please upload a CSV file.')
-        else:
-            try:
-                decoded_file = csv_file.read().decode('utf-8')
-                csv_data = csv.reader(decoded_file.splitlines(), delimiter=',')
-                headers = next(csv_data)  # Read header row
-                row_count = 1  # Counter for rows (excluding header)
-
-                for row in csv_data:
-                    row_count += 1
-                    if len(row) == len(headers):  # Validate row against headers
-                        first_name, last_name, email, title, company, type, location, level = row
-                        existing_contact = Contact.objects.filter(email=email).first()
-                        if existing_contact:
-                            messages.warning(request, f"Skipped row at index {row_count}: {row}. Contact with email '{email}' already exists.")
-                        else:
-                            Contact.objects.create(
-                                first_name=first_name, last_name=last_name, email=email,
-                                title=title, company=company, type=type,
-                                location=location, level=level
-                            )
-                    else:
-                        messages.warning(request, f"Skipped row at index {row_count}: {row}. Unexpected number of values.")
-
-                messages.success(request, 'Contacts uploaded successfully.')
-            except Exception as e:
-                messages.error(request, f"Error uploading contacts: {e}")
-    return render(request, 'upload_csv.html')
-
-@csrf_exempt
-def filter_contacts(request):
-    if request.method == 'POST':
-        # Get filter parameters from the frontend
-        type_filter = request.POST.get('type')
-        company_filter = request.POST.get('company')
-        location_filter = request.POST.get('location')
-        level_filter = request.POST.get('level')
-        university_filter = request.GET.get('universityFilter')
-        page_number = request.POST.get('page')  # Get the requested page number
-
-        # Retrieve all contacts
-        all_contacts = Contact.objects.all()
-
-        # Apply filters to the Contact queryset
-        filtered_contacts = all_contacts  # Start with all contacts
-        
-        if type_filter:
-            filtered_contacts = filtered_contacts.filter(type=type_filter)
-        if company_filter:
-            filtered_contacts = filtered_contacts.filter(company=company_filter)
-        if location_filter:
-            filtered_contacts = filtered_contacts.filter(location=location_filter)
-        if level_filter:
-            filtered_contacts = filtered_contacts.filter(level=level_filter)
-        if university_filter:
-            filtered_contacts = filtered_contacts.filter(university=university_filter)
-
-        # Pagination logic
-        contacts_per_page = 50  # Set the number of contacts per page
-
-        paginator = Paginator(filtered_contacts, contacts_per_page)
-
-        try:
-            contacts_page = paginator.page(page_number)
-        except PageNotAnInteger:
-            # If page is not an integer, return the first page
-            contacts_page = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g., 9999), return the last page of results
-            contacts_page = paginator.page(paginator.num_pages)
-
-        # Prepare paginated emails data to send back as JSON
-        contacts_data = list(contacts_page.object_list.values())  # Convert QuerySet to list of dictionaries
-
-        return JsonResponse({
-            'contacts': contacts_data,
-            'total_pages': paginator.num_pages,
-            'has_next': contacts_page.has_next(),
-            'has_previous': contacts_page.has_previous(),
-        }, status=200)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 def get_selected_contacts(request):
     contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
@@ -415,147 +341,90 @@ def upload_to_campaign_view(request):
             print('Error occurred during lead upload:', str(e))
             return HttpResponseServerError('Error occurred while processing the request.')
 
-@login_required
-def campaign_page(request):
-    # Fetch campaigns associated with the logged-in user only
-    user_campaigns = Campaign.objects.filter(user=request.user)
 
-    # Fetch filter parameters
-    type_filter = request.GET.get('typeFilter')
-    company_filter = request.GET.get('companyFilter')
-    location_filter = request.GET.get('locationFilter')
-    university_filter = request.GET.get('universityFilter')
-    campaign_filter = request.GET.get('campaignFilter')
-    
-    # Apply filters to campaign emails based on filter parameters
-    filter_conditions = Q()
-
-    if type_filter:
-        filter_conditions &= Q(type__icontains=type_filter)
-
-    if company_filter:
-        filter_conditions &= Q(company__icontains=company_filter)
-
-    if location_filter:
-        filter_conditions &= Q(location__icontains=location_filter)
+class CampaignPageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        user_campaigns = Campaign.objects.filter(user=request.user)
+        type_filter = request.GET.get('typeFilter')
+        company_filter = request.GET.get('companyFilter')
+        location_filter = request.GET.get('locationFilter')
+        university_filter = request.GET.get('universityFilter')
+        campaign_filter = request.GET.get('campaignFilter')
         
-    if university_filter:
-        filter_conditions &= Q(university__icontains=university_filter)
-
-    if campaign_filter:
-        filter_conditions &= Q(campaign_name__icontains=campaign_filter)
-
-    # Fetch search query parameter
-    search_query = request.GET.get('searchQuery')
-
-    # Apply search query to filter conditions
-    if search_query:
-        filter_conditions &= (
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(title__icontains=search_query) |
-            Q(campaign_name__icontains=search_query) |
-            Q(type__icontains=search_query) |
-            Q(company__icontains=search_query) |
-            Q(university__icontains=search_query) |
-            Q(location__icontains=search_query) 
-        )
-
-    # Fetch all campaign emails for the campaigns associated with the logged-in user and apply filters
-    all_campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
-
-    # Apply filters and search query to the entire dataset
-    filtered_campaign_emails = all_campaign_emails.filter(filter_conditions)
-
-    # Pagination
-    items_per_page = 50
-    page = request.GET.get('page', 1)
-
-    paginator = Paginator(filtered_campaign_emails, items_per_page)
-    try:
-        campaign_emails = paginator.page(page)
-    except PageNotAnInteger:
-        campaign_emails = paginator.page(1)
-    except EmptyPage:
-        campaign_emails = paginator.page(paginator.num_pages)
-
-    # Fetch distinct campaign names for filtering purposes
-    distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
-    distinct_types = all_campaign_emails.values_list('type', flat=True).distinct()
-    distinct_companies = all_campaign_emails.values_list('company', flat=True).distinct()
-    distinct_locations = all_campaign_emails.values_list('location', flat=True).distinct()
-    distinct_university = all_campaign_emails.values_list('university', flat=True).distinct()
-
-    # Pass filter parameters and search query in the context
-    filter_params = {
-        'typeFilter': type_filter,
-        'companyFilter': company_filter,
-        'locationFilter': location_filter,
-        'universityFilter': university_filter,
-        'campaignFilter': campaign_filter,
-        'searchQuery': search_query,
-    }
-
-    return render(request, 'campaign.html', {
-        'campaign_emails': campaign_emails,
-        'distinct_campaigns': distinct_campaigns,
-        'distinct_types': distinct_types,
-        'distinct_companies': distinct_companies,
-        'distinct_locations': distinct_locations,
-        'distinct_university': distinct_university,
-        'filter_params': filter_params,
-    })
-    
-    
-@csrf_exempt
-def filter_leads(request):
-    if request.method == 'POST':
-        type_filter = request.POST.get('type')
-        company_filter = request.POST.get('company')
-        location_filter = request.POST.get('location')
-        university_filter = request.POST.get('university')
-        page_number = request.POST.get('page')  # Get the requested page number
-
-        # Filter campaign emails based on received parameters
-        filtered_emails = Campaign_Emails.objects.all()
+        filter_conditions = Q()
 
         if type_filter:
-            filtered_emails = filtered_emails.filter(type=type_filter)
+            filter_conditions &= Q(type__icontains=type_filter)
+
         if company_filter:
-            filtered_emails = filtered_emails.filter(company=company_filter)
+            filter_conditions &= Q(company__icontains=company_filter)
+
         if location_filter:
-            filtered_emails = filtered_emails.filter(location=location_filter)
+            filter_conditions &= Q(location__icontains=location_filter)
+            
         if university_filter:
-            filtered_emails = filtered_emails.filter(university=location_filter)
+            filter_conditions &= Q(university__icontains=university_filter)
 
-        # Pagination
-        emails_per_page = 50  # Set the number of emails per page
+        if campaign_filter:
+            filter_conditions &= Q(campaign_name__icontains=campaign_filter)
 
-        paginator = Paginator(filtered_emails, emails_per_page)
+        search_query = request.GET.get('searchQuery')
 
+        if search_query:
+            filter_conditions &= (
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(title__icontains=search_query) |
+                Q(campaign_name__icontains=search_query) |
+                Q(type__icontains=search_query) |
+                Q(company__icontains=search_query) |
+                Q(university__icontains=search_query) |
+                Q(location__icontains=search_query) 
+            )
+
+        all_campaign_emails = Campaign_Emails.objects.filter(campaign_name__in=user_campaigns.values_list('name', flat=True)).order_by('campaign_name')
+
+        filtered_campaign_emails = all_campaign_emails.filter(filter_conditions)
+
+        items_per_page = 50
+        page = request.GET.get('page', 1)
+
+        paginator = Paginator(filtered_campaign_emails, items_per_page)
         try:
-            emails_page = paginator.page(page_number)
+            campaign_emails = paginator.page(page)
         except PageNotAnInteger:
-            # If page is not an integer, return the first page
-            emails_page = paginator.page(1)
+            campaign_emails = paginator.page(1)
         except EmptyPage:
-            # If page is out of range (e.g., 9999), return the last page of results
-            emails_page = paginator.page(paginator.num_pages)
+            campaign_emails = paginator.page(paginator.num_pages)
 
-        # Prepare paginated emails data to send back as JSON
-        emails_data = list(emails_page.object_list.values())  # Convert QuerySet to list of dictionaries
+        distinct_campaigns = user_campaigns.values_list('name', flat=True).distinct()
+        distinct_types = all_campaign_emails.values_list('type', flat=True).distinct()
+        distinct_companies = all_campaign_emails.values_list('company', flat=True).distinct()
+        distinct_locations = all_campaign_emails.values_list('location', flat=True).distinct()
+        distinct_university = all_campaign_emails.values_list('university', flat=True).distinct()
 
-        return JsonResponse({
-            'emails': emails_data,
-            'total_emails': paginator.count,
-            'total_pages': paginator.num_pages,
-            'has_next': emails_page.has_next(),
-            'has_previous': emails_page.has_previous(),
-        }, status=200)
+        filter_params = {
+            'typeFilter': type_filter,
+            'companyFilter': company_filter,
+            'locationFilter': location_filter,
+            'universityFilter': university_filter,
+            'campaignFilter': campaign_filter,
+            'searchQuery': search_query,
+        }
 
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
-
+        serializer = Campaign_EmailsSerializer(campaign_emails, many=True)
+        return Response({
+            'campaign_emails': serializer.data,
+            'distinct_campaigns': distinct_campaigns,
+            'distinct_types': distinct_types,
+            'distinct_companies': distinct_companies,
+            'distinct_locations': distinct_locations,
+            'distinct_university': distinct_university,
+            'filter_params': filter_params,
+        })
+    
 @csrf_exempt
 def delete_selected_leads(request):
     if request.method == 'POST':
@@ -763,16 +632,24 @@ def get_campaign_status(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+
+@api_view(['GET'])
 @login_required
 def email_template_page(request):
     # Retrieve emails associated with the logged-in user
     user_emails = Email.objects.filter(user=request.user)
+    email_serializer = EmailSerializer(user_emails, many=True)
 
     # Fetch campaign names associated with the logged-in user
     user_campaigns = Campaign.objects.filter(user=request.user)
-    campaign_names = user_campaigns.values_list('name', flat=True)
+    campaign_serializer = CampaignSerializer(user_campaigns, many=True)
 
-    return render(request, 'email_template.html', {'user_emails': user_emails, 'campaign_names': campaign_names})
+    data = {
+        'user_emails': email_serializer.data,
+        'campaign_names': campaign_serializer.data
+    }
+
+    return Response(data)
 
 @login_required
 def send_email(request):
@@ -853,106 +730,43 @@ def get_email_details(request):
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-@login_required
-def save_instructions(request):
-    if request.method == 'POST':
-        existing_instruction = Instructions.objects.filter(user=request.user).first()
+class SaveInstructionsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = InstructionsSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            existing_instruction = Instructions.objects.filter(user=user).first()
 
-        if existing_instruction:
-            instruction_id = existing_instruction.pk
-        else:
-            instruction_id = None
+            # Extract data from the validated serializer
+            data = serializer.validated_data
 
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        app_password = request.POST.get('app_password')
-        second_email = request.POST.get('second_email')
-        second_app_password = request.POST.get('second_app_password')
-        third_email = request.POST.get('third_email')
-        third_app_password = request.POST.get('third_app_password')
+            # If an existing instruction exists, update it, else create a new one
+            if existing_instruction:
+                instruction = existing_instruction
+            else:
+                instruction = Instructions(user=user)
 
-        if instruction_id:
-            instruction = Instructions.objects.get(pk=instruction_id)
-            instruction.first_name = first_name
-            instruction.last_name = last_name
-            instruction.email = email
-            instruction.app_password = app_password
-            instruction.second_email = second_email
-            instruction.second_app_password = second_app_password
-            instruction.third_email = third_email
-            instruction.third_app_password = third_app_password
+            instruction.first_name = data.get('first_name')
+            instruction.last_name = data.get('last_name')
+            instruction.email = data.get('email')
+            instruction.app_password = data.get('app_password')
+            instruction.second_email = data.get('second_email')
+            instruction.second_app_password = data.get('second_app_password')
+            instruction.third_email = data.get('third_email')
+            instruction.third_app_password = data.get('third_app_password')
             instruction.save()
-        else:
-            instruction = Instructions.objects.create(
-                user=request.user,
-                first_name=first_name,
-                last_name=last_name,
-                email=email,
-                app_password=app_password,
-                second_email=second_email,
-                second_app_password=second_app_password,
-                third_email=third_email,
-                third_app_password=third_app_password
+
+            # Sending email
+            # Make sure to import the necessary libraries
+            send_mail(
+                'Details Updated',
+                f'The profile details for user "{instruction.first_name} {instruction.last_name}" has been updated.',
+                os.environ.get('EMAIL_USER'),  # Sender's email
+                ['followpnowinfo@gmail.com','oreoluwaadesina1999@gmail.com'],  # Recipient's email
+                fail_silently=False,
             )
 
-        send_mail(
-            'Details Updated',
-            f'The profile details for user "{first_name} {last_name}" has been updated.',
-            os.environ.get('EMAIL_USER'),  # Sender's email
-            ['followpnowinfo@gmail.com','oreoluwaadesina1999@gmail.com'],  # Recipient's email
-            fail_silently=False,
-        )
-
-        # Redirect to the current page with a success query parameter
-        return HttpResponseRedirect(reverse('about') + '?success=true')
-
-    return redirect('about')
-
-@csrf_exempt
-def send_email(request):
-    if request.method == 'POST':
-        # Get data from the frontend
-        mail_subject = request.POST.get('mail_subject')
-        mail_content_html = request.POST.get('mail_content_html')
-        recepients_mail_list = request.POST.getlist('recepients_mail_list[]')  # Extract recipient list as array
-
-        # Print recipient list for debugging
-        print("Recipient list:", recepients_mail_list)
-        print("Mail Subject:", mail_subject )
-        print("Mail_Body", mail_content_html)
-        
-        # Fetch email and password from Instructions model
-        try:
-            mail_uname = Instructions.email
-            mail_pwd = Instructions.app_password
-            from_email = Instructions.Email  # Using the same email as sender
-        except Instructions.DoesNotExist:
-            return JsonResponse({'error': 'Email not found'}, status=404)
-
-        # Mail server parameters
-        smtp_host = "smtp.gmail.com"
-        smtp_port = 587
-
-        try:
-            # Create message object
-            msg = MIMEMultipart()
-            msg['From'] = from_email
-            msg['To'] = ','.join(recepients_mail_list)
-            msg['Subject'] = mail_subject
-            msg.attach(MIMEText(mail_content_html, 'html'))
-
-            # Print email message for debugging
-            print("Email message:", msg.as_string())
-
-            # Send email
-            with smtplib.SMTP(smtp_host, smtp_port) as s:
-                s.starttls()
-                s.login(mail_uname, mail_pwd)
-                s.send_message(msg)
-
-            return JsonResponse({'message': 'Email sent successfully'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+            return Response({'success': True}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
