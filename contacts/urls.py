@@ -3,13 +3,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView
+from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
     path('about/', views.about, name='about'),
     path('register/', UserRegisterAPIView.as_view(), name='register'),
-    path('profile/', views.profile, name='profile'),
+    path('profile/', ProfileAPIView.as_view(), name='profile'),
     path('login/', LoginAPIView.as_view(), name='login'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='password_reset.html'), name='password_reset'),
@@ -18,9 +18,9 @@ urlpatterns = [
     path('password-reset-complete/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
     path('contact-list/', ContactListAPIView.as_view(), name='contact-list'),
     path('get_campaign_names/', views.get_campaign_names, name='get_campaign_names'),
-    path('get_selected_contacts/', views.get_selected_contacts, name='get_selected_contacts'),
-    path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
-    path('upload_to_campaign_emails/', views.upload_to_campaign_emails, name='upload_to_campaign_emails'),
+    path('get_selected_contacts/', SelectedContactsAPIView.as_view(), name='get_selected_contacts'),
+    #path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
+    path('upload_to_campaign_emails/', UploadCampaignEmailsAPIView.as_view(), name='upload_to_campaign_emails'),
     path('campaign/', CampaignPageAPIView.as_view(), name='campaign_page'),
     path('delete_selected_leads/', views.delete_selected_leads, name='delete_selected_leads'),
     path('launch_campaign/', views.launch_campaign, name='launch_campaign'),

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
+from .models import Contact, Campaign_Emails, Campaign, Email, Instructions, Profile
 from django.contrib.auth.models import User
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -36,4 +36,16 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+    
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
+        
+class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  # Nested serializer for User model
+
+    class Meta:
+        model = Profile
+        fields = ['user', 'image', 'phone']
 

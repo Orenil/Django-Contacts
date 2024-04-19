@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
-from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer
+from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer
 from rest_framework.authentication import SessionAuthentication
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -82,25 +82,21 @@ class UserRegisterAPIView(APIView):
             return Response({'message': 'Your account has been created!'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@login_required
-def profile(request):
-    if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-        if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
-            p_form.save()
-            messages.success(request, f'Your Account has been updated!')
-            return redirect('profile')
-    else:
-        u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileUpdateForm(instance=request.user.profile)
-    
-    context = {
-        'u_form': u_form,
-        'p_form': p_form
-    }
-    return render(request, 'profile.html', context)
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile_instance = request.user.profile
+        serializer = ProfileSerializer(profile_instance)
+        return Response(serializer.data)
+
+    def put(self, request):
+        profile_instance = request.user.profile
+        serializer = ProfileSerializer(profile_instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class HomeAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -205,12 +201,12 @@ def get_campaign_names(request):
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
-
-def get_selected_contacts(request):
-    contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
-    contacts = Contact.objects.filter(id__in=contact_ids).values('first_name', 'last_name', 'email', 'company', 'type', 'location', 'level', 'university','linkedin')
-
-    return JsonResponse({'contacts': list(contacts)})
+class SelectedContactsAPIView(APIView):
+    def get(self, request):
+        contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
+        contacts = Contact.objects.filter(id__in=contact_ids)
+        serializer = ContactSerializer(contacts, many=True)
+        return Response({'contacts': serializer.data}, status=status.HTTP_200_OK)
 
 # Function to get the campaign ID based on the campaign name
 def get_campaign_id(api_key, campaign_name):
@@ -276,43 +272,51 @@ def upload_to_campaign(api_key, campaign_id, selected_leads):
 
     return response.status_code if 'response' in locals() else None  # Return status code or None if no response
 
-def upload_to_campaign_emails(selected_leads, user_id, campaign_name):
-    user = User.objects.get(id=user_id)  # Retrieve the user based on the provided ID
+class UploadCampaignEmailsAPIView(APIView):
+    def post(self, request):
+        selected_leads = request.data.get('selected_leads', [])
+        user_id = request.data.get('user_id')
+        campaign_name = request.data.get('campaign_name')
 
-    leads_to_upload = []
-
-    for lead in selected_leads:
-        email = lead.get('email', '')
-        if not Campaign_Emails.objects.filter(email=email, user=user).exists():
-            leads_to_upload.append(Campaign_Emails(
-                user=user,  # Associate the contact with the logged-in user
-                email=email,
-                first_name=lead.get('first_name', ''),
-                last_name=lead.get('last_name', ''),
-                company=lead.get('company', ''),
-                type=lead.get('type', ''),
-                location=lead.get('location', 'None'),
-                title=lead.get('title', ''),
-                university=lead.get('university', ''),
-                campaign_name=campaign_name
-            ))
-
-    try:
-        Campaign_Emails.objects.bulk_create(leads_to_upload)
-        logging.info("Leads uploaded successfully to campaign_emails model.")
-        return True
-    except Exception as e:
-        logging.error("Failed to upload leads to campaign_emails model.")
-        logging.error("Error: %s", str(e))
-        return False
-
-@csrf_exempt
-def upload_to_campaign_view(request):
-    if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            selected_leads = data.get('selected_leads')
-            campaign_name = data.get('campaign_name')
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        leads_to_upload = []
+
+        for lead in selected_leads:
+            email = lead.get('email', '')
+            if not Campaign_Emails.objects.filter(email=email, user=user).exists():
+                leads_to_upload.append(Campaign_Emails(
+                    user=user,  # Associate the contact with the logged-in user
+                    email=email,
+                    first_name=lead.get('first_name', ''),
+                    last_name=lead.get('last_name', ''),
+                    company=lead.get('company', ''),
+                    type=lead.get('type', ''),
+                    location=lead.get('location', 'None'),
+                    title=lead.get('title', ''),
+                    university=lead.get('university', ''),
+                    campaign_name=campaign_name
+                ))
+
+        try:
+            Campaign_Emails.objects.bulk_create(leads_to_upload)
+            logging.info("Leads uploaded successfully to campaign_emails model.")
+            return Response({'detail': 'Leads uploaded successfully'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logging.error("Failed to upload leads to campaign_emails model.")
+            logging.error("Error: %s", str(e))
+            return Response({'detail': 'Failed to upload leads'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# @csrf_exempt
+#def upload_to_campaign_view(request):
+#    if request.method == 'POST':
+#       try:
+#           data = json.loads(request.body)
+#            selected_leads = data.get('selected_leads')
+#            campaign_name = data.get('campaign_name')
             user_id = request.user.id 
 
             if not selected_leads or not campaign_name:
