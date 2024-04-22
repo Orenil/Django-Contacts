@@ -800,7 +800,7 @@ class SendIndividualEmailAPIView(APIView):
             
             # Extract parameters from JSON data
             smtp_host = data.get('smtpHost')
-            smtp_port = data.get('smtpPort', 465)  # Use default port if not provided
+            smtp_port = data.get('smtpPort', 587)  # Use default port if not provided
             mail_uname = data.get('mailUname')
             mail_pwd = data.get('mailPwd')
             from_email = data.get('fromEmail')
