@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
-from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer
+from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer, DeleteLeadsSerializer
 from rest_framework.authentication import SessionAuthentication
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -428,9 +428,26 @@ class CampaignPageAPIView(APIView):
             'distinct_university': distinct_university,
             'filter_params': filter_params,
         })
+
+class DeleteLeadsFromCampaignAPIView(APIView):
     
+    def post(self, request, *args, **kwargs):
+        serializer = DeleteLeadsSerializer(data=request.data)
+        if serializer.is_valid():
+            delete_list = serializer.validated_data.get('delete_list')
+            campaign_name = serializer.validated_data.get('campaign_name')
+            user_id = request.user.id
+            user = User.objects.get(id=user_id)
+            try:
+                Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
+                return JsonResponse({'message': 'Leads deleted successfully from the campaign database'})
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
+        else:
+            return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 @csrf_exempt
-def delete_selected_leads(request):
+def delete_selected_lead(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)  # Load JSON data from request body
@@ -774,3 +791,48 @@ class SaveInstructionsAPIView(APIView):
             return Response({'success': True}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class SendIndividualEmailAPIView(APIView):
+    def post(self, request):
+        try:
+            # Load JSON data from request body
+            data = json.loads(request.body)
+            
+            # Extract parameters from JSON data
+            smtp_host = data.get('smtpHost')
+            smtp_port = data.get('smtpPort', 465)  # Use default port if not provided
+            mail_uname = data.get('mailUname')
+            mail_pwd = data.get('mailPwd')
+            from_email = data.get('fromEmail')
+            mail_subject = data.get('mailSubject', '')
+            mail_content_html = data.get('mailContentHtml', '')
+            recepients_mail_list = data.get('recepientsMailList', [])  # Use empty list if not provided
+
+            # Check for required parameters
+            if not all([smtp_host, mail_uname, mail_pwd, from_email, recepients_mail_list]):
+                raise ValueError("Required parameters missing or empty")
+
+            # create message object
+            msg = MIMEMultipart()
+            msg['From'] = from_email
+            msg['To'] = ','.join(recepients_mail_list)
+            msg['Subject'] = mail_subject
+            msg.attach(MIMEText(mail_content_html, 'html'))
+
+            # Send message object as email using smtplib
+            s = smtplib.SMTP(smtp_host, smtp_port)
+            s.starttls()
+            s.login(mail_uname, mail_pwd)
+            msgText = msg.as_string()
+            sendErrs = s.sendmail(from_email, recepients_mail_list, msgText)
+            s.quit()
+
+            # check if errors occurred and handle them accordingly
+            if not sendErrs:
+                return Response({'message': 'Email sent successfully'})
+            else:
+                raise Exception("Errors occurred while sending email", sendErrs)
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON data in request body'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

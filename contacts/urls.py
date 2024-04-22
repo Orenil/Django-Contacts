@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView
+from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
@@ -22,7 +22,7 @@ urlpatterns = [
     #path('upload_to_campaign/', views.upload_to_campaign_view, name='upload_to_campaign'),
     path('upload_to_campaign_emails/', UploadCampaignEmailsAPIView.as_view(), name='upload_to_campaign_emails'),
     path('campaign/', CampaignPageAPIView.as_view(), name='campaign_page'),
-    path('delete_selected_leads/', views.delete_selected_leads, name='delete_selected_leads'),
+    path('delete_selected_leads/', DeleteLeadsFromCampaignAPIView.as_view(), name='delete_selected_leads'),
     path('launch_campaign/', views.launch_campaign, name='launch_campaign'),
     path('pause_campaign/', views.pause_campaign, name='pause_campaign'),
     path('get_campaign_status/', views.get_campaign_status, name='get_campaign_status'),
@@ -32,6 +32,7 @@ urlpatterns = [
     path('send_email/', views.send_email, name='send_email'),
     path('get_email_details/', views.get_email_details, name='get_email_details'),
     path('save-instructions/', SaveInstructionsAPIView.as_view(), name='save_instructions'),
+    path('send-individual-emails/', SendIndividualEmailAPIView.as_view(), name='send_individual_emails'),
 ]
 
 if settings.DEBUG:

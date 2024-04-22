@@ -48,4 +48,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['user', 'image', 'phone']
+        
+class DeleteLeadsSerializer(serializers.Serializer):
+    delete_list = serializers.ListField(child=serializers.CharField())
+    campaign_name = serializers.CharField()
 
