@@ -2,7 +2,7 @@ from django.test import TestCase
 
 {
     "smtpHost": "smtp.gmail.com",
-    "smtpPort": 465,
+    "smtpPort": 587,
     "mailUname": "followupreset1@gmail.com",
     "mailPwd": "anyosfcmarydmcns",
     "fromEmail": "oreoluwaadesina1999@gmail.com",

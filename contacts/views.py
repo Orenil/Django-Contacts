@@ -45,6 +45,7 @@ from email.mime.multipart import MIMEMultipart
 from email import encoders
 import os
 import smtplib
+import imaplib
 from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNameFromContactId, getCompanyNameFromContactId, getTypeFromContactId, getTitleFromContactId
 import csv
 import json
@@ -836,3 +837,33 @@ class SendIndividualEmailAPIView(APIView):
             return Response({'error': 'Invalid JSON data in request body'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class EmailCountsAPIView(APIView):
+    def get(self, request):
+        try:
+            data = json.loads(request.body) if request.body else {}  # Get JSON data from request body
+
+            # Extract parameters from JSON data
+            host = data.get('host')
+            username = data.get('username')
+            password = data.get('password')
+            subject_keyword = data.get('subject_keyword')
+
+            if not all([host, username, password, subject_keyword]):
+                return JsonResponse({'error': 'Host, username, password, or subject keyword missing'}, status=400)
+
+            mail = imaplib.IMAP4_SSL(host)
+            mail.login(username, password)
+            mail.select("inbox")
+
+            # Get count of unseen messages with the subject keyword
+            _, unseen_data = mail.search(None, '(UNSEEN)', '(SUBJECT "{}")'.format(subject_keyword))
+            unseen_count = len(unseen_data[0].split())
+
+            # Get count of seen messages with the subject keyword
+            _, seen_data = mail.search(None, '(SEEN)', '(SUBJECT "{}")'.format(subject_keyword))
+            seen_count = len(seen_data[0].split())
+
+            return JsonResponse({'unseen_count': unseen_count, 'seen_count': seen_count})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

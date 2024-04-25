@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView
+from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView, EmailCountsAPIView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
@@ -33,6 +33,7 @@ urlpatterns = [
     path('get_email_details/', views.get_email_details, name='get_email_details'),
     path('save-instructions/', SaveInstructionsAPIView.as_view(), name='save_instructions'),
     path('send-individual-emails/', SendIndividualEmailAPIView.as_view(), name='send_individual_emails'),
+    path('email-counts/', EmailCountsAPIView.as_view(), name='email_counts'),
 ]
 
 if settings.DEBUG:
