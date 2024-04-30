@@ -10,3 +10,10 @@ from django.test import TestCase
     "mailContentHtml": "Hi, Hope u are fine.",
     "recepientsMailList": ["oreoluwaadesina1999@gmail.com"]
 }
+
+{
+    "host": "imap.gmail.com",
+    "username": "followupreset1@gmail.com",
+    "password": "anyosfcmarydmcns",
+    "subject_keyword": "TEST"
+}

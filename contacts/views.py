@@ -867,3 +867,38 @@ class EmailCountsAPIView(APIView):
             return JsonResponse({'unseen_count': unseen_count, 'seen_count': seen_count})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+        
+class CheckRepliedEmailsAPIView(APIView):
+    def get(self, request):
+        try:
+            data = json.loads(request.body) if request.body else {} # Get JSON data from request
+
+            # Extract parameters from JSON data
+            host = data.get('host')
+            username = data.get('username')
+            password = data.get('password')
+            subject_keyword = data.get('subject_keyword')
+
+            if not all([host, username, password, subject_keyword]):
+                return JsonResponse({'error': 'Missing required parameters'}, status=400)
+
+            # Your email checking logic here
+            mail = imaplib.IMAP4_SSL(host)
+            mail.login(username, password)
+            mail.select("inbox")
+
+            _, search_data = mail.search(None, '(UNSEEN SUBJECT "{}")'.format(subject_keyword))
+            replies_info = []
+
+            for num in search_data[0].split():
+                _, data = mail.fetch(num, '(FLAGS)')
+                replied = '\\Answered' in data[0].decode('utf-8')
+                replied_status = 'NO' if replied else 'YES'
+                replies_info.append({'subject': subject_keyword, 'replied': replied_status})
+
+            mail.close()
+            mail.logout()
+
+            return JsonResponse({'replies_info': replies_info})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
