@@ -35,6 +35,7 @@ urlpatterns = [
     path('send-individual-emails/', SendIndividualEmailAPIView.as_view(), name='send_individual_emails'),
     path('email-counts/', EmailCountsAPIView.as_view(), name='email_counts'),
     path('check_replied/', CheckRepliedEmailsAPIView.as_view(), name='check_replied'),
+    path('update_sequences/', views.update_sequences, name='update_sequences'),
 ]
 
 if settings.DEBUG:

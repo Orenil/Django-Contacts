@@ -902,3 +902,56 @@ class CheckRepliedEmailsAPIView(APIView):
             return JsonResponse({'replies_info': replies_info})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+@csrf_exempt      
+@require_POST
+def update_sequences(request):
+    # Parse request data
+    data = json.loads(request.body)
+    email = data.get('email') #FollowUp Instantly Email
+    password = data.get('password') #FollowUp Instantly Password
+    campaign_name = data.get('campaign_name')
+    sequence_data = data.get('sequence_data')
+
+    # Get campaign ID
+    api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'  # Replace with your API key
+    campaign_id = get_campaign_id(api_key, campaign_name)
+
+    if campaign_id is None:
+        return JsonResponse({'message': 'Failed to get campaign ID'}, status=400)
+
+    # Call the combined function
+    result_message = authenticate_and_update_sequences(email, password, campaign_id, sequence_data)
+
+    # Return response
+    if result_message == "Sequences updated successfully!":
+        return JsonResponse({'message': result_message}, status=200)
+    else:
+        return JsonResponse({'message': result_message}, status=400)
+
+def authenticate_and_update_sequences(email, password, campaign_id, sequence_data):
+    # Authentication
+    auth_url = 'https://app.instantly.ai/api/auth/login'
+    auth_payload = {'email': email, 'password': password}
+    auth_response = requests.post(auth_url, json=auth_payload)
+    
+    if auth_response.status_code != 200:
+        return "Authentication failed."
+    
+    # Get the cookies from the authentication response
+    cookies = auth_response.cookies
+    
+    # Update Sequences
+    update_url = 'https://app.instantly.ai/api/campaign/update/sequences'
+    headers = {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+        'referer': f'https://app.instantly.ai/app/campaign/{campaign_id}/sequences',
+    }
+    
+    update_response = requests.post(update_url, cookies=cookies, headers=headers, json=sequence_data)
+    
+    if update_response.status_code == 200:
+        return "Sequences updated successfully!"
+    else:
+        return "Failed to update sequences."
