@@ -474,13 +474,8 @@ def delete_selected_lead(request):
 
             delete_list = data.get('delete_list')  # Retrieve list of emails for deletion
             campaign_name = data.get('campaign_name')
-            user_id = request.user.id  # Retrieve the logged-in user ID
-            user = User.objects.get(id=user_id)  # Retrieve the user based on the provided ID
 
-            # Delete selected leads associated with the logged-in user from the database based on email
-            Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
-
-            # Now, also delete from Instantly AI
+            # Now, delete from Instantly AI
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
             campaign_id = get_campaign_id(api_key, campaign_name)
 
@@ -508,7 +503,7 @@ def delete_selected_lead(request):
             return JsonResponse({'error': str(e)}, status=500)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
-
+    
 @csrf_exempt
 def launch_campaign(request):
     if request.method == 'POST':

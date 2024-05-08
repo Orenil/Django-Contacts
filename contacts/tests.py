@@ -101,7 +101,7 @@ Org_id = '174fc505-4a13-425c-9579-bf46339fbf98'
     }
 }
 
-#Upload to Campaign Emails Table
+#Upload to Campaign Emails Table database
 {
     "selected_leads": [
         {
@@ -155,4 +155,37 @@ Org_id = '174fc505-4a13-425c-9579-bf46339fbf98'
     "user_id": 24  
 }
 
-#
+#for deleting leads from campaign on instantly
+{
+  "delete_list": [
+    "daren@email.com"
+  ],
+  "campaign_name": "Test"
+}
+
+#for deleting leads from database
+{
+    "delete_list": [
+        "john.doe@example.com"
+    ],
+    "campaign_name": "Test",
+    "user_id": 24
+}
+
+#launch and pause campaign, campaign summary and campaign status
+{
+    "campaign_name": "Test"
+}
+
+#Save instructions model
+{
+    "user_id": 24,
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com",
+    "app_password": "secret443",
+    "second_email": "johndoe2@example.com",
+    "second_app_password": "secret456",
+    "third_email": "johndoe3@example.com",
+    "third_app_password": "secret789"
+}
