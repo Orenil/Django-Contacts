@@ -1,5 +1,11 @@
 from django.test import TestCase
+#for logging in
+{
+    "username": "Oreoluwa",
+    "password": "Riverdale17@"
+}
 
+#for testing the send email
 {
     "smtpHost": "smtp.gmail.com",
     "smtpPort": 587,
@@ -11,6 +17,7 @@ from django.test import TestCase
     "recepientsMailList": ["oreoluwaadesina1999@gmail.com"]
 }
 
+#for testing the read email
 {
     "host": "imap.gmail.com",
     "username": "followupreset1@gmail.com",
@@ -20,7 +27,7 @@ from django.test import TestCase
 
 Org_id = '174fc505-4a13-425c-9579-bf46339fbf98'
 
-#Only One Step
+#Only One Step for update sequence
 {
     "email": "followupnowinfo@gmail.com",
     "password": "Beyourgreatestself123!",
@@ -47,7 +54,7 @@ Org_id = '174fc505-4a13-425c-9579-bf46339fbf98'
     }
 }
 
-#Multiple Steps
+#Multiple Steps for update sequence
 {
     "email": "followupnowinfo@gmail.com",
     "password": "Beyourgreatestself123!",
@@ -93,3 +100,59 @@ Org_id = '174fc505-4a13-425c-9579-bf46339fbf98'
         "orgID": "174fc505-4a13-425c-9579-bf46339fbf98"
     }
 }
+
+#Upload to Campaign Emails Table
+{
+    "selected_leads": [
+        {
+            "email": "example@email.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "company": "ABC Inc.",
+            "type": "Lead",
+            "location": "City",
+            "title": "Manager",
+            "university": "XYZ University"
+        },
+        {
+            "email": "another@example.com",
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "company": "DEF Corp.",
+            "type": "Lead",
+            "location": "Town",
+            "title": "Director",
+            "university": "PQR College"
+        }
+    ],
+    "user_id": 1,
+    "campaign_name": "Test"
+}
+
+#For upload to instantly campaign
+{
+    "selected_leads": [
+        {
+            "email": "john.doe@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "company": "ABC Inc.",
+            "type": "Lead",
+            "title": "Manager",
+            "university": "XYZ University"
+        },
+        {
+            "email": "jane.smith@example.com",
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "company": "XYZ Corp.",
+            "type": "Lead",
+            "title": "Director",
+            "university": "PQR College"
+        }
+    ],
+    "campaign_name": "Test",
+    "user_id": 24  
+}
+
+#

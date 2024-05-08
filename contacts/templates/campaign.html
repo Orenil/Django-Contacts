@@ -618,7 +618,7 @@
                     // Send an AJAX request to delete selected leads
                     $.ajax({
                         type: 'POST',
-                        url: '{% url "delete_selected_leads" %}',
+                        url: '{% url "delete_leads_campaign" %}',
                         data: JSON.stringify({
                             'delete_list': selectedEmails, // Include the list of selected emails for deletion
                             'campaign_name': selectedCampaign,

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import django_heroku
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -130,8 +131,11 @@ REST_FRAMEWORK = {
     ),
 }
 '''
+KNOX = {
+    'TOKEN_TTL': timedelta(hours=24),  # Set token expiration to 24 hours
+}
 
-TOKEN_TTL = 1 * 60 * 60
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

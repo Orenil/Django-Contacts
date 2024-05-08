@@ -64,7 +64,7 @@ class LoginAPIView(KnoxLoginView):
         serializer = AuthTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        auth_login(request, user)
+        auth_login(request, user)        
         return super(LoginAPIView, self).post(request, format=None)
 
 class LogoutAPIView(KnoxLogoutView):
@@ -82,6 +82,23 @@ class UserRegisterAPIView(APIView):
             serializer.save()
             return Response({'message': 'Your account has been created!'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+def print_user_info(request):
+    # Retrieve all users from the User model
+    all_users = User.objects.all()
+
+    # Create a string to store user IDs and usernames
+    user_info_str = "User Information:\n"
+
+    # Iterate through each user and append their ID and username to the string
+    for user in all_users:
+        user_info_str += f"User ID: {user.id}, Username: {user.username}\n"
+
+    # Print the user information to the console
+    print(user_info_str)
+
+    # Return an HTTP response with the user information for testing purposes
+    return HttpResponse(user_info_str, content_type="text/plain")
 
 class ProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -311,13 +328,13 @@ class UploadCampaignEmailsAPIView(APIView):
             logging.error("Error: %s", str(e))
             return Response({'detail': 'Failed to upload leads'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# @csrf_exempt
-#def upload_to_campaign_view(request):
-#    if request.method == 'POST':
-#       try:
-#           data = json.loads(request.body)
-#            selected_leads = data.get('selected_leads')
-#            campaign_name = data.get('campaign_name')
+@csrf_exempt
+def upload_to_campaign_view(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            selected_leads = data.get('selected_leads')
+            campaign_name = data.get('campaign_name')
             user_id = request.user.id 
 
             if not selected_leads or not campaign_name:
@@ -334,18 +351,13 @@ class UploadCampaignEmailsAPIView(APIView):
 
             upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
             
-            # Attempt to upload lead information to campaign_emails model without duplicates
-            campaign_emails_upload_success = upload_to_campaign_emails(selected_leads, user_id, campaign_name)
-
-            if upload_result is not None and campaign_emails_upload_success:
-                return JsonResponse({'success': True, 'instantly_upload_result': upload_result})
-            else:
-                return JsonResponse({'error': 'Failed to upload leads'}, status=500)
+            # Call the view correctly using as_view()
+            view_instance = UploadCampaignEmailsAPIView.as_view()
+            return view_instance(request)  # Call the view function with the request object
         
         except Exception as e:
             print('Error occurred during lead upload:', str(e))
             return HttpResponseServerError('Error occurred while processing the request.')
-
 
 class CampaignPageAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -437,13 +449,20 @@ class DeleteLeadsFromCampaignAPIView(APIView):
         if serializer.is_valid():
             delete_list = serializer.validated_data.get('delete_list')
             campaign_name = serializer.validated_data.get('campaign_name')
-            user_id = request.user.id
-            user = User.objects.get(id=user_id)
-            try:
-                Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
-                return JsonResponse({'message': 'Leads deleted successfully from the campaign database'})
-            except Exception as e:
-                return JsonResponse({'error': str(e)}, status=500)
+            user_id = request.data.get('user_id')  # Extract user_id from request data
+            # Check if user_id exists in the request data
+            if user_id is None:
+                return JsonResponse({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+            # Retrieve user using filter().first() to handle non-existent users gracefully
+            user = User.objects.filter(id=user_id).first()
+            if user is not None:
+                try:
+                    Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
+                    return JsonResponse({'message': 'Leads deleted successfully from the campaign database'})
+                except Exception as e:
+                    return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
             return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
@@ -478,7 +497,7 @@ def delete_selected_lead(request):
                 response = requests.post(url, headers=headers, json=payload)
 
                 if response.status_code == 200:
-                    return JsonResponse({'message': 'Leads deleted successfully from both the database and Instantly AI'})
+                    return JsonResponse({'message': 'Leads deleted successfully from Instantly AI'})
                 else:
                     # If deletion from Instantly AI fails, handle this scenario accordingly
                     return JsonResponse({'error': 'Failed to delete leads from Instantly AI'}, status=response.status_code)
@@ -753,22 +772,30 @@ def get_email_details(request):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 class SaveInstructionsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
     def post(self, request):
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = InstructionsSerializer(data=request.data)
         if serializer.is_valid():
-            user = request.user
-            existing_instruction = Instructions.objects.filter(user=user).first()
+            # Fetch user based on user_id
+            try:
+                user = User.objects.get(pk=user_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
             # Extract data from the validated serializer
             data = serializer.validated_data
 
             # If an existing instruction exists, update it, else create a new one
+            existing_instruction = Instructions.objects.filter(user=user).first()
             if existing_instruction:
                 instruction = existing_instruction
             else:
                 instruction = Instructions(user=user)
 
+            # Update instruction data
             instruction.first_name = data.get('first_name')
             instruction.last_name = data.get('last_name')
             instruction.email = data.get('email')
@@ -779,20 +806,11 @@ class SaveInstructionsAPIView(APIView):
             instruction.third_app_password = data.get('third_app_password')
             instruction.save()
 
-            # Sending email
-            # Make sure to import the necessary libraries
-            send_mail(
-                'Details Updated',
-                f'The profile details for user "{instruction.first_name} {instruction.last_name}" has been updated.',
-                os.environ.get('EMAIL_USER'),  # Sender's email
-                ['followpnowinfo@gmail.com','oreoluwaadesina1999@gmail.com'],  # Recipient's email
-                fail_silently=False,
-            )
-
-            return Response({'success': True}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Saved successfully'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+#sending individual emails
 class SendIndividualEmailAPIView(APIView):
     def post(self, request):
         try:

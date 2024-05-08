@@ -23,9 +23,38 @@ class EmailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class InstructionsSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)  # Adding user_id as a write-only field
+
     class Meta:
         model = Instructions
-        fields = '__all__'
+        fields = ['id', 'user', 'user_id', 'first_name', 'last_name', 'email', 'app_password',
+                  'second_email', 'second_app_password', 'third_email', 'third_app_password']
+        read_only_fields = ['id', 'user']  # id and user should be read-only
+
+    def validate_user_id(self, value):
+        """
+        Check if the user with the provided user_id exists.
+        """
+        try:
+            user = User.objects.get(pk=value)
+            return user
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User does not exist.")
+
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_id')
+        user = User.objects.get(pk=user_id)
+        instructions = Instructions.objects.create(user=user, **validated_data)
+        return instructions
+
+    def update(self, instance, validated_data):
+        user_id = validated_data.pop('user_id')
+        user = User.objects.get(pk=user_id)
+        instance.user = user
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
         
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
