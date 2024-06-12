@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView, EmailCountsAPIView, CheckRepliedEmailsAPIView
+from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView, EmailCountsAPIView, CheckRepliedEmailsAPIView, ProcessLinkedInView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
@@ -38,6 +38,7 @@ urlpatterns = [
     path('email-counts/', EmailCountsAPIView.as_view(), name='email_counts'),
     path('check_replied/', CheckRepliedEmailsAPIView.as_view(), name='check_replied'),
     path('update_sequences/', views.update_sequences, name='update_sequences'),
+    path('api/process-linkedin/', ProcessLinkedInView.as_view(), name='process-linkedin'),
 ]
 
 if settings.DEBUG:

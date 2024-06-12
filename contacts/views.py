@@ -42,6 +42,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
+from .utils import process_linkedin_html
 from email import encoders
 import os
 import smtplib
@@ -968,3 +969,16 @@ def authenticate_and_update_sequences(email, password, campaign_id, sequence_dat
         return "Sequences updated successfully!"
     else:
         return "Failed to update sequences."
+    
+class ProcessLinkedInView(APIView):
+    def post(self, request, *args, **kwargs):
+        html_file_path = request.data.get('html_file_path')
+        
+        if not html_file_path:
+            return Response({'error': 'html_file_path is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            contacts, matches = process_linkedin_html(html_file_path)
+            return Response({'contacts': contacts, 'matches': matches}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
