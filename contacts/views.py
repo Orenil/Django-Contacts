@@ -979,6 +979,17 @@ class ProcessLinkedInView(APIView):
         
         try:
             contacts, matches = process_linkedin_html(html_file_path)
-            return Response({'contacts': contacts, 'matches': matches}, status=status.HTTP_200_OK)
+
+            # Prepare CSV data
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="Full_Contacts.csv"'
+
+            # Write CSV data to the response
+            writer = csv.DictWriter(response, fieldnames=matches[0].keys())
+            writer.writeheader()
+            for match in matches:
+                writer.writerow(match)
+
+            return response
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
