@@ -982,7 +982,7 @@ class ProcessLinkedInView(APIView):
 
             # Prepare CSV data
             response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="Full_Contacts.csv"'
+            response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'Full_Contacts.csv'
 
             # Write CSV data to the response
             writer = csv.DictWriter(response, fieldnames=matches[0].keys())
