@@ -49,6 +49,7 @@ psycopg2==2.9.9
 pycparser==2.21
 PySocks==1.7.1
 python-dateutil==2.8.2
+python-dotenv==1.0.1
 pytz==2024.1
 PyYAML==6.0.1
 requests==2.31.0
@@ -70,6 +71,7 @@ tzdata==2023.3
 urllib3==2.0.7
 users==1.0.dev0
 w3lib==2.1.2
+webdriver-manager==4.0.1
 whitenoise==6.6.0
 wsproto==1.2.0
 xlrd==2.0.1

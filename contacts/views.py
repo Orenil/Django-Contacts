@@ -223,6 +223,9 @@ def get_campaign_names(request):
 class SelectedContactsAPIView(APIView):
     def get(self, request):
         contact_ids = request.GET.getlist('contactIds[]')  # Fetch the contact IDs from the request
+        if not contact_ids:
+            contact_ids = request.GET.getlist('contactIds')  # Fallback to 'contactIds' if 'contactIds[]' is not found
+        
         contacts = Contact.objects.filter(id__in=contact_ids)
         serializer = ContactSerializer(contacts, many=True)
         return Response({'contacts': serializer.data}, status=status.HTTP_200_OK)
