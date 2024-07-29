@@ -450,10 +450,25 @@ class CampaignPageAPIView(APIView):
             'distinct_university': distinct_university,
             'filter_params': filter_params,
         })
-class TotalCampaignsAPIView(APIView):
-    def get(self, request):
-        total_leads = Campaign.objects.count()
-        return Response({'total_leads': total_leads})
+class TotalLeadsInCampaignAPIView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        campaign_name = request.GET.get('campaign_name')
+        user_id = request.GET.get('user_id')
+        
+        # Check if user_id and campaign_name exist in the request data
+        if not campaign_name:
+            return JsonResponse({'error': 'Campaign name is required'}, status=400)
+        if not user_id:
+            return JsonResponse({'error': 'User ID is required'}, status=400)
+        
+        # Retrieve user using filter().first() to handle non-existent users gracefully
+        user = User.objects.filter(id=user_id).first()
+        if user is not None:
+            total_leads = Campaign_Emails.objects.filter(campaign_name=campaign_name, user=user).count()
+            return Response({'total_leads': total_leads})
+        else:
+            return JsonResponse({'error': 'User not found'}, status=404)
 class DeleteLeadsFromCampaignAPIView(APIView):
     
     def post(self, request, *args, **kwargs):
