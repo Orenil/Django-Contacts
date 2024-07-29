@@ -211,6 +211,11 @@ class ContactListAPIView(APIView):
             'filter_params': filter_params,
         })
 
+class TotalContactsAPIView(APIView):
+    def get(self, request):
+        total_contacts = Contact.objects.count()
+        return Response({'total_contacts': total_contacts})
+    
 @login_required
 def get_campaign_names(request):
     if request.method == 'GET':
@@ -445,7 +450,10 @@ class CampaignPageAPIView(APIView):
             'distinct_university': distinct_university,
             'filter_params': filter_params,
         })
-
+class TotalCampaignsAPIView(APIView):
+    def get(self, request):
+        total_leads = Campaign.objects.count()
+        return Response({'total_leads': total_leads})
 class DeleteLeadsFromCampaignAPIView(APIView):
     
     def post(self, request, *args, **kwargs):
