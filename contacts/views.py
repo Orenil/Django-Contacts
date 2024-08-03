@@ -301,71 +301,60 @@ def upload_to_campaign(api_key, campaign_id, selected_leads):
 
 class UploadCampaignEmailsAPIView(APIView):
     def post(self, request):
-        selected_leads = request.data.get('selected_leads', [])
-        user_id = request.data.get('user_id')
-        campaign_name = request.data.get('campaign_name')
-
         try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            # Parse the request data
+            selected_leads = request.data.get('selected_leads', [])
+            campaign_name = request.data.get('campaign_name')
+            user_id = request.data.get('user_id')
 
-        leads_to_upload = []
+            if not selected_leads or not campaign_name or not user_id:
+                return Response({'error': 'Incomplete data received'}, status=status.HTTP_400_BAD_REQUEST)
 
-        for lead in selected_leads:
-            email = lead.get('email', '')
-            if not Campaign_Emails.objects.filter(email=email, user=user).exists():
-                leads_to_upload.append(Campaign_Emails(
-                    user=user,  # Associate the contact with the logged-in user
-                    email=email,
-                    first_name=lead.get('first_name', ''),
-                    last_name=lead.get('last_name', ''),
-                    company=lead.get('company', ''),
-                    type=lead.get('type', ''),
-                    location=lead.get('location', 'None'),
-                    title=lead.get('title', ''),
-                    university=lead.get('university', ''),
-                    campaign_name=campaign_name
-                ))
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            Campaign_Emails.objects.bulk_create(leads_to_upload)
-            logging.info("Leads uploaded successfully to campaign_emails model.")
-            return Response({'detail': 'Leads uploaded successfully'}, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            logging.error("Failed to upload leads to campaign_emails model.")
-            logging.error("Error: %s", str(e))
-            return Response({'detail': 'Failed to upload leads'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Upload to the database
+            leads_to_upload = []
+            for lead in selected_leads:
+                email = lead.get('email', '')
+                if not Campaign_Emails.objects.filter(email=email, user=user).exists():
+                    leads_to_upload.append(Campaign_Emails(
+                        user=user,
+                        email=email,
+                        first_name=lead.get('first_name', ''),
+                        last_name=lead.get('last_name', ''),
+                        company=lead.get('company', ''),
+                        type=lead.get('type', ''),
+                        location=lead.get('location', 'None'),
+                        title=lead.get('title', ''),
+                        university=lead.get('university', ''),
+                        campaign_name=campaign_name
+                    ))
 
-@csrf_exempt
-def upload_to_campaign_view(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            selected_leads = data.get('selected_leads')
-            campaign_name = data.get('campaign_name')
-            user_id = request.user.id 
+            try:
+                Campaign_Emails.objects.bulk_create(leads_to_upload)
+                logging.info("Leads uploaded successfully to campaign_emails model.")
+            except Exception as e:
+                logging.error("Failed to upload leads to campaign_emails model.")
+                logging.error("Error: %s", str(e))
+                return Response({'detail': 'Failed to upload leads'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if not selected_leads or not campaign_name:
-                return JsonResponse({'error': 'Incomplete data received'}, status=400)
-
-            # Filter out duplicates from selected leads based on email addresses
-            selected_leads = [dict(t) for t in {tuple(d.items()) for d in selected_leads}]
-            
-            print('Received campaign name:', campaign_name)
-            print('Received selected leads:', selected_leads)
-
+            # Upload to the campaign
             api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
             campaign_id = get_campaign_id(api_key, campaign_name)
 
-            upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
+            # Ensure unique leads based on email
+            selected_leads = [dict(t) for t in {tuple(d.items()) for d in selected_leads}]
             
-            # Call the view correctly using as_view()
-            view_instance = UploadCampaignEmailsAPIView.as_view()
-            return view_instance(request)  # Call the view function with the request object
-        
+            upload_result = upload_to_campaign(api_key, campaign_id, selected_leads)
+
+            return Response({'detail': 'Leads uploaded successfully and campaign updated'}, status=status.HTTP_201_CREATED)
+
         except Exception as e:
-            print('Error occurred during lead upload:', str(e))
+            logging.error("Error occurred during the combined upload process.")
+            logging.error("Error: %s", str(e))
             return HttpResponseServerError('Error occurred while processing the request.')
 
 class CampaignPageAPIView(APIView):
@@ -469,67 +458,57 @@ class TotalLeadsInCampaignAPIView(APIView):
             return Response({'total_leads': total_leads})
         else:
             return JsonResponse({'error': 'User not found'}, status=404)
+
 class DeleteLeadsFromCampaignAPIView(APIView):
-    
+
+    @method_decorator(csrf_exempt)
     def post(self, request, *args, **kwargs):
         serializer = DeleteLeadsSerializer(data=request.data)
         if serializer.is_valid():
             delete_list = serializer.validated_data.get('delete_list')
             campaign_name = serializer.validated_data.get('campaign_name')
             user_id = request.data.get('user_id')  # Extract user_id from request data
+
             # Check if user_id exists in the request data
             if user_id is None:
                 return JsonResponse({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
             # Retrieve user using filter().first() to handle non-existent users gracefully
             user = User.objects.filter(id=user_id).first()
             if user is not None:
+                # First, delete leads from the campaign database
                 try:
                     Campaign_Emails.objects.filter(email__in=delete_list, user=user).delete()
-                    return JsonResponse({'message': 'Leads deleted successfully from the campaign database'})
                 except Exception as e:
-                    return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    return JsonResponse({'error': f'Failed to delete from campaign database: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                # Now, delete leads from Instantly AI
+                api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
+                campaign_id = get_campaign_id(api_key, campaign_name)
+
+                if campaign_id:
+                    payload = {
+                        "api_key": api_key,
+                        "campaign_id": campaign_id,
+                        "delete_all_from_company": False,
+                        "delete_list": delete_list  # Pass the list of emails to be deleted
+                    }
+
+                    url = "https://api.instantly.ai/api/v1/lead/delete"
+                    headers = {'Content-Type': 'application/json'}
+                    response = requests.post(url, headers=headers, json=payload)
+
+                    if response.status_code == 200:
+                        return JsonResponse({'message': 'Leads deleted successfully from both the campaign database and Instantly AI'})
+                    else:
+                        # If deletion from Instantly AI fails, handle this scenario accordingly
+                        return JsonResponse({'error': 'Failed to delete leads from Instantly AI'}, status=response.status_code)
+                else:
+                    return JsonResponse({'error': 'Invalid campaign name'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
             return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-@csrf_exempt
-def delete_selected_lead(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)  # Load JSON data from request body
-
-            delete_list = data.get('delete_list')  # Retrieve list of emails for deletion
-            campaign_name = data.get('campaign_name')
-
-            # Now, delete from Instantly AI
-            api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'
-            campaign_id = get_campaign_id(api_key, campaign_name)
-
-            if campaign_id:
-                payload = {
-                    "api_key": "6efvz60989m4q3jnwvyhm2x7wa1c",
-                    "campaign_id": campaign_id,
-                    "delete_all_from_company": False,
-                    "delete_list": delete_list  # Pass the list of emails to be deleted
-                }
-
-                url = "https://api.instantly.ai/api/v1/lead/delete"
-                headers = {'Content-Type': 'application/json'}
-                response = requests.post(url, headers=headers, json=payload)
-
-                if response.status_code == 200:
-                    return JsonResponse({'message': 'Leads deleted successfully from Instantly AI'})
-                else:
-                    # If deletion from Instantly AI fails, handle this scenario accordingly
-                    return JsonResponse({'error': 'Failed to delete leads from Instantly AI'}, status=response.status_code)
-            else:
-                return JsonResponse({'error': 'Invalid campaign name'}, status=400)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
     
 @csrf_exempt
 def launch_campaign(request):
