@@ -793,8 +793,12 @@ class SaveInstructionsAPIView(APIView):
             existing_instruction = Instructions.objects.filter(user=user).first()
             if existing_instruction:
                 instruction = existing_instruction
+                status_code = status.HTTP_200_OK  # Indicate update
+                message = 'Updated successfully'
             else:
                 instruction = Instructions(user=user)
+                status_code = status.HTTP_201_CREATED  # Indicate creation
+                message = 'Saved successfully'
 
             # Update instruction data
             instruction.first_name = data.get('first_name')
@@ -807,9 +811,10 @@ class SaveInstructionsAPIView(APIView):
             instruction.third_app_password = data.get('third_app_password')
             instruction.save()
 
-            return Response({'message': 'Saved successfully'}, status=status.HTTP_201_CREATED)
+            return Response({'message': message}, status=status_code)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 #sending individual emails
 class SendIndividualEmailAPIView(APIView):
