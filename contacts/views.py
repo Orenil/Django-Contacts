@@ -927,17 +927,41 @@ class CheckRepliedEmailsAPIView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-@csrf_exempt      
+@csrf_exempt
 @require_POST
 def update_sequences(request):
     # Parse request data
     data = json.loads(request.body)
-    email = data.get('email') #FollowUp Instantly Email
-    password = data.get('password') #FollowUp Instantly Password
+    user_id = data.get('user_id')  # User ID
+    email = data.get('email')  # FollowUp Instantly Email
+    password = data.get('password')  # FollowUp Instantly Password
     campaign_name = data.get('campaign_name')
     sequence_data = data.get('sequence_data')
 
-    # Get campaign ID
+    # Extract sequence steps
+    sequences = sequence_data.get('sequences', [])
+
+    # Prepare lists to store email contents and subjects
+    email_contents = []
+    subjects = []
+
+    # Iterate over sequences and steps
+    for sequence in sequences:
+        for step in sequence.get('steps', []):
+            for variant in step.get('variants', []):
+                # Extract subject and body from each variant
+                subject = variant.get('subject', '')
+                body = variant.get('body', '')
+
+                # Append to lists
+                subjects.append(subject)
+                email_contents.append(body)
+
+    # Ensure we have at least three contents for the Email fields
+    while len(email_contents) < 3:
+        email_contents.append('')
+
+    # Get the campaign ID
     api_key = '6efvz60989m4q3jnwvyhm2x7wa1c'  # Replace with your API key
     campaign_id = get_campaign_id(api_key, campaign_name)
 
@@ -947,11 +971,44 @@ def update_sequences(request):
     # Call the combined function
     result_message = authenticate_and_update_sequences(email, password, campaign_id, sequence_data)
 
-    # Return response
+    # Save the email data to the database if sequences are updated successfully
     if result_message == "Sequences updated successfully!":
-        return JsonResponse({'message': result_message}, status=200)
-    else:
-        return JsonResponse({'message': result_message}, status=400)
+        try:
+            # Get the user by ID
+            user = User.objects.get(id=user_id)
+
+            # Get or create the campaign
+            campaign, created = Campaign.objects.get_or_create(name=campaign_name, user=user)
+
+            # Attempt to get the existing email object
+            try:
+                email_obj = Email.objects.get(
+                    user=user,
+                    campaign=campaign,
+                    subject=subjects[0] if subjects else ''  # Assuming subject can identify the email uniquely
+                )
+                # Update the existing record
+                email_obj.email_content1 = email_contents[0]
+                email_obj.email_content2 = email_contents[1]
+                email_obj.email_content3 = email_contents[2]
+                email_obj.save()
+            except Email.DoesNotExist:
+                # Create a new record if no existing email is found
+                Email.objects.create(
+                    user=user,
+                    campaign=campaign,
+                    subject=subjects[0] if subjects else '',
+                    email_content1=email_contents[0],
+                    email_content2=email_contents[1],
+                    email_content3=email_contents[2],
+                )
+
+            return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
+
+        except User.DoesNotExist:
+            return JsonResponse({'message': 'User not found'}, status=400)
+
+    return JsonResponse({'message': result_message}, status=400)
 
 def authenticate_and_update_sequences(email, password, campaign_id, sequence_data):
     # Authentication
