@@ -1,26 +1,56 @@
 first_name,last_name,title,linkedin_url
-Douglas,Leone,Partner at Sequoia Capital,https://www.linkedin.com/in/douglas-leone-a2714
-Justin,"Koo,",Investment Associate,https://www.linkedin.com/in/justin-koo-cfa
-Bradley,(Yusuke) T.,"VP of Strategy & CFO at AI/LLM startup in Tokyo | ex. Firework, Uber, Investor, Tech M&A/IPO advisor",https://www.linkedin.com/in/bradleyytanaka
-Abdulrahman,AlJiffry,Startups | Accelerators | Angel Investing & VC | Misk 2030 Leader,https://www.linkedin.com/in/abdulrahman-aljiffry-23834738
-Aktsa,E.,"Builder, VC | Harvard, Cornell",https://www.linkedin.com/in/aktsa
-TK,Kong,Head of Ramp Procurement,https://www.linkedin.com/in/tkkong
-Deep,Grewal,*** GTM Strategy | Venture Capital | Portfolio Development | Artificial Intelligence | Public Sector | Cloud Advisory | Strategic Partnerships | Alliance Management ***,https://www.linkedin.com/in/mrdeepgrewal
-Juan,Pablo Ortega,"Co-Founder at Yuno, Rappi",https://www.linkedin.com/in/juanpabloom
-Alexandra,Farmer,Investing in AI at Intel Capital,https://www.linkedin.com/in/alexandra-farmer
-Wendell,Laidley,Climate Tech & Technology CFO / Entrepreneur / Wall Street Veteran,https://www.linkedin.com/in/wendelllaidley
-Andrew,Schoen,Investment Committee Partner at NEA,https://www.linkedin.com/in/andrewaschoen
-Gracie,Jing,Software Engineer at Brex,https://www.linkedin.com/in/gracie-jing
-Arın,Özkula,General Partner at 500 Emerging Europe,https://www.linkedin.com/in/aozkula
-Ava,Poole,Kleiner Perkins Engineering Fellow @ Allium,https://www.linkedin.com/in/avapoole
-Neeraj,Agrawal,General Partner at Battery Ventures,https://www.linkedin.com/in/neerajagrawal2000
-Jai,Massari,Cofounder & Chief Legal Officer,https://www.linkedin.com/in/jai-massari-411b7014b
-Kristopher,Floyd,Venture Builder | Full-Stack GTM | Futurist,https://www.linkedin.com/in/kjfloyd
-Liza,Landsman,CEO at Stash,https://www.linkedin.com/in/liza-landsman-83138b
-Uri,"Lopatin, MD","Founder, Board Member, Investor",https://www.linkedin.com/in/urilopatin
-Bogomil,Balkansky,Partner at Sequoia Capital,https://www.linkedin.com/in/balkansky
-Elana,Kuppermann,"Investor Relations | Diversity, Equity & Inclusion Fellow | Dialogue & Learning Facilitator",https://www.linkedin.com/in/elana-kuppermann-7b55b890
-Luis,Bacalao,Operating Partner at Khosla Ventures,https://www.linkedin.com/in/luisbacalao
-Soyee,P.,Product Designer,https://www.linkedin.com/in/soyeepark
-Yunru,"(Alanis) Yu, CPA",Senior Fund Accountant at Kleiner Perkins,https://www.linkedin.com/in/yunru-alanis-yu
-Andrew,dePasquale,Technologist,https://www.linkedin.com/in/andrewdepasquale
+Max,Gasvoda,Associate at KKR & Co. Inc.,https://www.linkedin.com/in/max-gasvoda
+Hasie,Sherman,Sales Analyst at the Carlyle Group,https://www.linkedin.com/in/hasie-sherman-847b32167
+Nicholas,Richmond,Associate at TPG Growth,https://www.linkedin.com/in/nicholas-richmond-707740137
+Sam,Super,Associate at KKR,https://www.linkedin.com/in/samjsuper
+Jeffrey,Babat,Principal at KKR,https://www.linkedin.com/in/jeffreybabat
+Tara,MacMillan,Head of Business Partners at Hg,https://www.linkedin.com/in/taramacmillan
+Jayne,C.,,https://www.linkedin.com/in/jayne-c-162b4b131
+Charlotte,Kwon,Associate at KKR & Co. Inc.,https://www.linkedin.com/in/charlotte-kwon-4ab334124
+Logan,Prince,Analyst at Carlyle,https://www.linkedin.com/in/loganprince2020
+Varun,Rao,Associate at KKR & Co. Inc.,https://www.linkedin.com/in/varun-m-rao
+Nicole,Merken,Private Equity Associate at KKR,https://www.linkedin.com/in/nicole-merken-72718a144
+Anne,Arlinghaus,"Partner at KKR, Co-Head KKR Capstone Americas",https://www.linkedin.com/in/anne-arlinghaus
+Colin,Bloom,Economics & History at Vanderbilt University,https://www.linkedin.com/in/colin-bloom
+Kara,Helander,Leading Change at Intersection of Business and Social Impact,https://www.linkedin.com/in/karahelander
+Hayden,Lekacz,Technology Investor at TPG,https://www.linkedin.com/in/hayden-lekacz-a53597125
+Annabelle,Cox,Global Credit Investor Relations Vice President at The Carlyle Group,https://www.linkedin.com/in/annabelle-cox-99b162126
+Patrick,McBride,Director at EQT Partners,https://www.linkedin.com/in/patrick-mcbride-1bb70233
+Corey,Danzig,"Client Relations & Capital Raising at EQT Group, Americas Private Wealth",https://www.linkedin.com/in/corey-danzig-92a94812
+Max,Zirin-Hyman,Associate at The Carlyle Group,https://www.linkedin.com/in/maxwellzirinhyman
+Reid,Gallagher,"Principal at KKR, Energy Private Equity",https://www.linkedin.com/in/reid-gallagher-b7982595
+Rod,Aliabadi,MD at Vista Equity Partners,https://www.linkedin.com/in/rod-aliabadi-8b45943
+Ryan,O'Toole,"Senior Value Creation Director at Hg | Seasoned Operator, Advisor and PE Operating Lead",https://www.linkedin.com/in/ryan-o-toole
+Jon,Stevens,Providing AI driven solutions that help organizations make smarter and more data driven decisions.,https://www.linkedin.com/in/jontstevens
+Clara,Jackson,Investor at TA Associates,https://www.linkedin.com/in/jacksonclara
+Andrew,Almeida,Partner at Thoma Bravo | Cybersecurity | Badger,https://www.linkedin.com/in/andrew-almeida-93430915
+Alexis,Mendelsohn,Structured Credit at KKR,https://www.linkedin.com/in/alexis-mendelsohn-58317b107
+Peter,Hernandez,Vice President at Thoma Bravo,https://www.linkedin.com/in/peter-hernandez-143a8152
+Cassidy,Kortze,Senior Associate at Bain Capital,https://www.linkedin.com/in/cassidy-kortze-76b8951b3
+Kippy,Ball,Senior Associate at Thoma Bravo,https://www.linkedin.com/in/kippy-ball-a9a979115
+Jean,Park,Director at KKR Capstone,https://www.linkedin.com/in/jeanpark
+Andrew,Carr,Associate at The Carlyle Group,https://www.linkedin.com/in/andrew-carr-976499178
+Cynthia,Hong,Associate at TPG,https://www.linkedin.com/in/cynthia-hong
+Mohak,A.,Rising Third-Year Chancellor's Scholar at Vanderbilt University,https://www.linkedin.com/in/mohak-agarwalla
+Peter,McGoohan,Partner at TPG Global,https://www.linkedin.com/in/peter-mcgoohan-646a1b147
+Vignesh,Siva,Analyst at TPG Public Equity Partners,https://www.linkedin.com/in/vigsiva
+Mary,Hsu,Principal at The Carlyle Group,https://www.linkedin.com/in/mary-hsu
+Sia,Andrews,Senior Analyst at Carlyle,https://www.linkedin.com/in/sia-andrews-431855155
+Casey,Leonetti,"Managing Director at Bain Capital Private Equity, Healthcare",https://www.linkedin.com/in/caseyleonetti
+Jim,Lees,Managing Director at KKR,https://www.linkedin.com/in/jim-lees
+Jacob,Creiger-Combs,Capital Markets at TA Associates,https://www.linkedin.com/in/jacobcreiger-combs
+Joe,Germanese,Principal at Great Hill Partners,https://www.linkedin.com/in/joe-germanese-68782a38
+Saya,Uchiyama,Principal at KKR Capital Markets,https://www.linkedin.com/in/saya-uchiyama
+Chris,Popp,Managing Director at EQT Partners,https://www.linkedin.com/in/christopherjpopp
+Kevin,Schuler,Technology Investor at TA Associates,https://www.linkedin.com/in/kevin-schuler
+Samira,Madhany,The Carlyle Group,https://www.linkedin.com/in/samira-madhany-9a9728
+Paige,Weiser,"Vice President, Capital Markets at TPG",https://www.linkedin.com/in/paige-weiser-28736b16b
+Anna,Long,Operations Advisor at The Carlyle Group,https://www.linkedin.com/in/anna-long-91b3905
+Eric,"Clauson, CPA",Associate VP Fund Management - Global Credit,https://www.linkedin.com/in/eric-clauson-cpa-a45183124
+Mahek,Mehta,Software Investor at TA Associates,https://www.linkedin.com/in/mahekemblem
+George,Mueller,Partner at KKR,https://www.linkedin.com/in/george-mueller-52419973
+Kelsey,Shannon Graham,Executive Director at Vista Equity Partners,https://www.linkedin.com/in/kelsey-shannon-graham-600b6226
+Vishesh,Patel,Portfolio Analyst,https://www.linkedin.com/in/visheshdpatel
+Justin,Crofford,Total Rewards & Talent Analytics,https://www.linkedin.com/in/justincrofford
+Janessa,Jussen,"Brooklyn Law School, Vanderbilt University",https://www.linkedin.com/in/janessa-jussen-939899a7
+Mark,Carter,Managing Director TA Associates - Management Committee,https://www.linkedin.com/in/mark-carter-27811970

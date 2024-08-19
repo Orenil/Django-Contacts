@@ -38,6 +38,7 @@ from django.contrib.auth.models import User
 from .forms import UserRegisterForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.conf import settings
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -811,10 +812,18 @@ class SaveInstructionsAPIView(APIView):
             instruction.third_app_password = data.get('third_app_password')
             instruction.save()
 
+            # Send email notification
+            send_mail(
+                'App password updated',
+                f'The profile details for user "{instruction.first_name} {instruction.last_name}" have been updated.',
+                os.environ.get('EMAIL_USER'),  # Sender's email
+                ['followupnowinfo@gmail.com', 'oreoluwaadesina1999@gmail.com'],  # Recipient's email
+                fail_silently=False,
+            )
+
             return Response({'message': message}, status=status_code)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 #sending individual emails
 class SendIndividualEmailAPIView(APIView):
@@ -825,7 +834,7 @@ class SendIndividualEmailAPIView(APIView):
             
             # Extract parameters from JSON data
             smtp_host = data.get('smtpHost')
-            smtp_port = data.get('smtpPort', 587)  # Use default port if not provided
+            smtp_port = data.get('smtpPort', 465)  # Using SSL port
             mail_uname = data.get('mailUname')
             mail_pwd = data.get('mailPwd')
             from_email = data.get('fromEmail')
@@ -837,7 +846,7 @@ class SendIndividualEmailAPIView(APIView):
             if not all([smtp_host, mail_uname, mail_pwd, from_email, recepients_mail_list]):
                 raise ValueError("Required parameters missing or empty")
 
-            # create message object
+            # Create message object
             msg = MIMEMultipart()
             msg['From'] = from_email
             msg['To'] = ','.join(recepients_mail_list)
@@ -845,20 +854,21 @@ class SendIndividualEmailAPIView(APIView):
             msg.attach(MIMEText(mail_content_html, 'html'))
 
             # Send message object as email using smtplib
-            s = smtplib.SMTP(smtp_host, smtp_port)
-            s.starttls()
+            s = smtplib.SMTP_SSL(smtp_host, smtp_port)  # Use SMTP_SSL for port 465
             s.login(mail_uname, mail_pwd)
             msgText = msg.as_string()
             sendErrs = s.sendmail(from_email, recepients_mail_list, msgText)
             s.quit()
 
-            # check if errors occurred and handle them accordingly
+            # Check if errors occurred and handle them accordingly
             if not sendErrs:
                 return Response({'message': 'Email sent successfully'})
             else:
                 raise Exception("Errors occurred while sending email", sendErrs)
         except json.JSONDecodeError:
             return Response({'error': 'Invalid JSON data in request body'}, status=status.HTTP_400_BAD_REQUEST)
+        except smtplib.SMTPException as e:
+            return Response({'error': f'SMTP error occurred: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
