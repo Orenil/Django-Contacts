@@ -13,6 +13,7 @@ import os
 import django_heroku
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
 
-ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com', 'www.followupnetworking.com', 'followupnetworking.com']
+ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com', 'https://stark-tor-87215-c16dec3bb614.herokuapp.com','www.followupnetworking.com', 'followupnetworking.com']
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or another session engine of your choice
 
@@ -93,10 +94,7 @@ WSGI_APPLICATION = 'contactsproject.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
 }
 
 
