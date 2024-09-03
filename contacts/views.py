@@ -682,13 +682,13 @@ def email_template_page(request):
     # Retrieve emails associated with the logged-in user
     user_emails = Email.objects.filter(user=request.user)
     email_serializer = EmailSerializer(user_emails, many=True)
-
+    
     # Fetch campaign names associated with the logged-in user
     user_campaigns = Campaign.objects.filter(user=request.user)
     campaign_serializer = CampaignSerializer(user_campaigns, many=True)
 
     data = {
-        'user_emails': email_serializer.data,
+        'user_emails': email_serializer.data if user_emails.exists() else [],
         'campaign_names': campaign_serializer.data
     }
 
