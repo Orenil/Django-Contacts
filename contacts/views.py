@@ -990,19 +990,20 @@ def update_sequences(request):
             # Get or create the campaign
             campaign, created = Campaign.objects.get_or_create(name=campaign_name, user=user)
 
-            # Attempt to get the existing email object
-            try:
-                email_obj = Email.objects.get(
-                    user=user,
-                    campaign=campaign,
-                    subject=subjects[0] if subjects else ''  # Assuming subject can identify the email uniquely
-                )
+            # Check for an existing email object by matching user, campaign, and subjects
+            email_obj = Email.objects.filter(
+                user=user,
+                campaign=campaign,
+                subject=subjects[0] if subjects else ''
+            ).first()
+
+            if email_obj:
                 # Update the existing record
                 email_obj.email_content1 = email_contents[0]
                 email_obj.email_content2 = email_contents[1]
                 email_obj.email_content3 = email_contents[2]
                 email_obj.save()
-            except Email.DoesNotExist:
+            else:
                 # Create a new record if no existing email is found
                 Email.objects.create(
                     user=user,
