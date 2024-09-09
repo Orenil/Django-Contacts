@@ -129,17 +129,19 @@ class HomeAPIView(APIView):
 
 class ContactListAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        # Ensure the user is authenticated before accessing request.user
-        user_campaigns = Campaign.objects.filter(user=request.user)
-        campaign_names = list(user_campaigns.values_list('name', flat=True))
-        distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
-        distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
-        distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
-        distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
-        distinct_university = Contact.objects.order_by('university').values_list('university', flat=True).distinct()
-        
-        contacts = Contact.objects.all()
+        user = request.user
+
+        # Get the emails of contacts already associated with the authenticated user's campaigns
+        campaign_contact_emails = Campaign_Emails.objects.filter(
+            user=user
+        ).values_list('email', flat=True)  # Use the 'email' field for filtering
+
+        # Start with all contacts that are not in the authenticated user's campaigns
+        contacts = Contact.objects.exclude(email__in=campaign_contact_emails)
+
+        # Apply search query if present
         query = request.GET.get('q')
         if query:
             contacts = contacts.filter(
@@ -155,6 +157,7 @@ class ContactListAPIView(APIView):
                 Q(linkedin__icontains=query)
             )
 
+        # Apply filters if present
         type_filter = request.GET.get('typeFilter')
         company_filter = request.GET.get('companyFilter')
         location_filter = request.GET.get('locationFilter')
@@ -162,27 +165,22 @@ class ContactListAPIView(APIView):
         university_filter = request.GET.get('universityFilter')
 
         filter_conditions = Q()
-
         if type_filter:
             filter_conditions &= Q(type__icontains=type_filter)
-
         if company_filter:
             filter_conditions &= Q(company__icontains=company_filter)
-
         if location_filter:
             filter_conditions &= Q(location__icontains=location_filter)
-
         if level_filter:
             filter_conditions &= Q(level__icontains=level_filter)
-
         if university_filter:
             filter_conditions &= Q(university__icontains=university_filter)
 
         contacts = contacts.filter(filter_conditions)
 
+        # Paginate the results
         items_per_page = 50
         page = request.GET.get('page', 1)
-
         paginator = Paginator(contacts, items_per_page)
         try:
             contacts = paginator.page(page)
@@ -191,6 +189,7 @@ class ContactListAPIView(APIView):
         except EmptyPage:
             contacts = paginator.page(paginator.num_pages)
 
+        # Prepare filter params for the response
         filter_params = {
             'typeFilter': type_filter,
             'companyFilter': company_filter,
@@ -199,6 +198,14 @@ class ContactListAPIView(APIView):
             'universityFilter': university_filter,
         }
 
+        # Get distinct values for filters
+        distinct_types = Contact.objects.order_by('type').values_list('type', flat=True).distinct()
+        distinct_companies = Contact.objects.order_by('company').values_list('company', flat=True).distinct()
+        distinct_locations = Contact.objects.order_by('location').values_list('location', flat=True).distinct()
+        distinct_levels = Contact.objects.order_by('level').values_list('level', flat=True).distinct()
+        distinct_university = Contact.objects.order_by('university').values_list('university', flat=True).distinct()
+
+        # Serialize the contacts and return the response
         serializer = ContactSerializer(contacts, many=True)
         return Response({
             'contacts': serializer.data,
@@ -207,7 +214,6 @@ class ContactListAPIView(APIView):
             'distinct_locations': distinct_locations,
             'distinct_levels': distinct_levels,
             'distinct_university': distinct_university,
-            'campaign_names': campaign_names,
             'query': query,
             'filter_params': filter_params,
         })
