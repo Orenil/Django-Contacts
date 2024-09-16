@@ -1020,6 +1020,15 @@ def update_sequences(request):
                     email_content3=email_contents[2],
                 )
 
+            # Send an email notification
+            send_mail(
+                subject='Sequence Saved Successfully',
+                message=f'Sequence for campaign "{campaign_name}" has been saved successfully for user {user.first_name} {user.last_name}.',
+                from_email='followupreset1@gmail.com', 
+                recipient_list=['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com'],  
+                fail_silently=False,
+            )
+
             return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
 
         except User.DoesNotExist:
