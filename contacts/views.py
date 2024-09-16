@@ -1020,17 +1020,31 @@ def update_sequences(request):
                     email_content3=email_contents[2],
                 )
 
-            # Send an email notification
-            # send_mail(
-            #     subject='Sequence Saved Successfully',
-            #     message=f'Sequence for campaign "{campaign_name}" has been saved successfully for user {user.first_name} {user.last_name}.',
-            #     from_email='followupreset1@gmail.com', 
-            #     recipient_list=['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com'],  
-            #     fail_silently=False,
-            # )
+            # Hardcoded SMTP settings
+            smtp_host = 'smtp.gmail.com'
+            smtp_port = 465  # SSL port
+            mail_uname = os.environ.get('EMAIL_USER')  # Retrieve from environment
+            mail_pwd = os.environ.get('EMAIL_PASSWORD')  # Retrieve from environment
+            from_email = mail_uname  # From email should match the username
+            recepients_mail_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com']
 
 
-            return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
+            # Create message object
+            msg = MIMEMultipart()
+            msg['From'] = from_email
+            msg['To'] = ','.join(recepients_mail_list)
+            msg['Subject'] = 'Sequence Saved Successfully'
+            mail_content_html = f'Sequence for campaign "{campaign_name}" has been saved successfully for user {user.first_name} {user.last_name}.'
+            msg.attach(MIMEText(mail_content_html, 'html'))
+
+            # Send email using smtplib
+            s = smtplib.SMTP_SSL(smtp_host, smtp_port)  # Use SMTP_SSL for port 465
+            s.login(mail_uname, mail_pwd)
+            msgText = msg.as_string()
+            s.sendmail(from_email, recepients_mail_list, msgText)
+            s.quit()
+
+            return JsonResponse({'message': 'Sequences updated, email data saved, and notification email sent successfully!'}, status=200)
 
         except User.DoesNotExist:
             return JsonResponse({'message': 'User not found'}, status=400)
