@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
+DEBUG = True
 
 ALLOWED_HOSTS = ['networkingapp-09bd564b3d1e.herokuapp.com', 'https://stark-tor-87215-c16dec3bb614.herokuapp.com','www.followupnetworking.com', 'followupnetworking.com']
 

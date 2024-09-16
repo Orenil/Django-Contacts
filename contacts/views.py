@@ -53,6 +53,7 @@ import csv
 import json
 import requests
 import logging
+import traceback
 from datetime import date
 import os
 
@@ -943,6 +944,14 @@ class CheckRepliedEmailsAPIView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+def send_notification_email(user_name):
+    subject = 'Sequences Updated Successfully'
+    message = f'Hello {user_name},\n\nYour sequences have been successfully updated.'
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com']
+    
+    send_mail(subject, message, from_email, recipient_list)
+
 @csrf_exempt
 @require_POST
 def update_sequences(request):
@@ -1020,37 +1029,17 @@ def update_sequences(request):
                     email_content3=email_contents[2],
                 )
 
-            # Hardcoded SMTP settings
-            smtp_host = 'smtp.gmail.com'
-            smtp_port = 465  # SSL port
-            mail_uname = os.environ.get('EMAIL_USER')  # Retrieve from environment
-            mail_pwd = os.environ.get('EMAIL_PASSWORD')  # Retrieve from environment
-            from_email = mail_uname  # From email should match the username
-            recepients_mail_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com']
+            # Send notification email
+            send_notification_email(user.first_name)
 
-
-            # Create message object
-            msg = MIMEMultipart()
-            msg['From'] = from_email
-            msg['To'] = ','.join(recepients_mail_list)
-            msg['Subject'] = 'Sequence Saved Successfully'
-            mail_content_html = f'Sequence for campaign "{campaign_name}" has been saved successfully for user {user.first_name} {user.last_name}.'
-            msg.attach(MIMEText(mail_content_html, 'html'))
-
-            # Send email using smtplib
-            s = smtplib.SMTP_SSL(smtp_host, smtp_port)  # Use SMTP_SSL for port 465
-            s.login(mail_uname, mail_pwd)
-            msgText = msg.as_string()
-            s.sendmail(from_email, recepients_mail_list, msgText)
-            s.quit()
-
-            return JsonResponse({'message': 'Sequences updated, email data saved, and notification email sent successfully!'}, status=200)
+            return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
 
         except User.DoesNotExist:
             return JsonResponse({'message': 'User not found'}, status=400)
 
     return JsonResponse({'message': result_message}, status=400)
 
+    
 def authenticate_and_update_sequences(email, password, campaign_id, sequence_data):
     # Authentication
     auth_url = 'https://app.instantly.ai/api/auth/login'
