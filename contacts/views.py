@@ -1029,9 +1029,6 @@ def update_sequences(request):
                     email_content3=email_contents[2],
                 )
 
-            # Send notification email
-            send_notification_email(user.first_name)
-
             return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
 
         except User.DoesNotExist:
