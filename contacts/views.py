@@ -944,12 +944,12 @@ class CheckRepliedEmailsAPIView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-def send_notification_email(user_name):
+def send_notification_email(user_email, user_name):
     subject = 'Sequences Updated Successfully'
     message = f'Hello {user_name},\n\nYour sequences have been successfully updated.'
     from_email = settings.EMAIL_HOST_USER
-    recipient_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com']
-    
+    recipient_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com', user_email]  # Include user's email as a recipient
+
     send_mail(subject, message, from_email, recipient_list)
 
 @csrf_exempt
@@ -1028,6 +1028,9 @@ def update_sequences(request):
                     email_content2=email_contents[1],
                     email_content3=email_contents[2],
                 )
+
+            # Send notification email
+            send_notification_email(user.email, user.first_name)
 
             return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
 
