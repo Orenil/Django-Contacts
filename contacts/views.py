@@ -944,9 +944,9 @@ class CheckRepliedEmailsAPIView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-def send_notification_email(user_email, user_name):
-    subject = 'Sequences Updated Successfully'
-    message = f'Hello {user_name},\n\nYour sequences have been successfully updated.'
+def send_notification_email(user_email, user_name, campaign_name):
+    subject = f'Sequences Updated Successfully for {campaign_name}'
+    message = f'Hello {user_name},\n\nThe sequences for the campaign "{campaign_name}" have been successfully updated.'
     from_email = settings.EMAIL_HOST_USER
     recipient_list = ['oreoluwaadesina1999@gmail.com', 'followupnowinfo@gmail.com', user_email]  # Include user's email as a recipient
 
@@ -1029,8 +1029,8 @@ def update_sequences(request):
                     email_content3=email_contents[2],
                 )
 
-            # Send notification email
-            send_notification_email(user.email, user.first_name)
+            # Send notification email with the campaign name
+            send_notification_email(user.email, user.first_name, campaign_name)
 
             return JsonResponse({'message': 'Sequences updated and email data saved successfully!'}, status=200)
 
@@ -1038,8 +1038,7 @@ def update_sequences(request):
             return JsonResponse({'message': 'User not found'}, status=400)
 
     return JsonResponse({'message': result_message}, status=400)
-
-    
+  
 def authenticate_and_update_sequences(email, password, campaign_id, sequence_data):
     # Authentication
     auth_url = 'https://app.instantly.ai/api/auth/login'
