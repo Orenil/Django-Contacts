@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.views import View
 from django.utils.decorators import method_decorator
 from django.core import serializers as django_serializers
 from django.http import HttpResponseRedirect
@@ -18,7 +19,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
-from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer, DeleteLeadsSerializer
+from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer, DeleteLeadsSerializer, ResendEmailSerializer
 from rest_framework.authentication import SessionAuthentication
 from knox.auth import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -46,6 +47,7 @@ from email.mime.multipart import MIMEMultipart
 from .utils import process_linkedin_html
 from email import encoders
 import os
+import time
 import smtplib
 import imaplib
 from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNameFromContactId, getCompanyNameFromContactId, getTypeFromContactId, getTitleFromContactId
@@ -55,7 +57,11 @@ import requests
 import logging
 import traceback
 from datetime import date
+import email
+from email.utils import parseaddr
 import os
+import resend
+from typing import List
 
 def about(request):
     return render(request, 'about.html')
@@ -908,39 +914,97 @@ class EmailCountsAPIView(APIView):
             return JsonResponse({'unseen_count': unseen_count, 'seen_count': seen_count})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-        
+
 class CheckRepliedEmailsAPIView(APIView):
     def get(self, request):
         try:
-            data = json.loads(request.body) if request.body else {} # Get JSON data from request
+            data = json.loads(request.body) if request.body else {}  # Get JSON data from request
 
             # Extract parameters from JSON data
             host = data.get('host')
             username = data.get('username')
             password = data.get('password')
             subject_keyword = data.get('subject_keyword')
+            followup_subject = data.get('followup_subject')
+            followup_body = data.get('followup_body')
+            wait_time = data.get('wait_time')  # Default to 2 minutes if not specified
+            second_wait_time = data.get('second_wait_time')  # Second wait time (default to 5 minutes)
+            check_interval = data.get('check_interval')  # How long to wait before checking the inbox after sending follow-up
+            second_followup_subject = data.get('second_followup_subject')
+            second_followup_body = data.get('second_followup_body')
+            recipient_email = data.get('recipient_email')
 
-            if not all([host, username, password, subject_keyword]):
+            if not all([host, username, password, subject_keyword, recipient_email, second_followup_subject, second_followup_body]):
                 return JsonResponse({'error': 'Missing required parameters'}, status=400)
 
-            # Your email checking logic here
+            def check_for_reply():
+                """
+                Checks the inbox for replies from the recipient with the matching subject keyword.
+                """
+                mail.select("inbox")  # Select the inbox folder
+                status, search_data = mail.search(None, '(SUBJECT "{}")'.format(subject_keyword))
+                search_data = search_data[0].split()
+
+                # Check if any emails are replies from the recipient
+                for num in search_data:
+                    status, data = mail.fetch(num, '(RFC822)')  # Fetch the entire email (headers and body)
+                    raw_email = data[0][1]
+                    msg = email.message_from_bytes(raw_email)
+
+                    # Extract the 'From' email address
+                    from_email = parseaddr(msg['From'])[1]
+
+                    # Check if the reply is from the recipient_email
+                    if from_email == recipient_email:
+                        return True
+                return False
+
+            # Connect to the email server using the sender's (username) credentials
             mail = imaplib.IMAP4_SSL(host)
             mail.login(username, password)
-            mail.select("inbox")
 
-            _, search_data = mail.search(None, '(UNSEEN SUBJECT "{}")'.format(subject_keyword))
-            replies_info = []
+            # Check if a reply has already been received before sending the first follow-up
+            if check_for_reply():
+                mail.close()
+                mail.logout()
+                return JsonResponse({'message': "Recipient has already replied. No follow-up email sent."}, status=200)
 
-            for num in search_data[0].split():
-                _, data = mail.fetch(num, '(FLAGS)')
-                replied = '\\Answered' in data[0].decode('utf-8')
-                replied_status = 'NO' if replied else 'YES'
-                replies_info.append({'subject': subject_keyword, 'replied': replied_status})
+            # If no reply is found, wait for the specified time and send the first follow-up email
+            time.sleep(wait_time)
+            send_mail(
+                followup_subject,  # Email subject
+                followup_body,     # Email message
+                settings.EMAIL_HOST_USER,  # From email (sender's email)
+                [recipient_email],  # To email (sending follow-up to the recipient)
+                fail_silently=False,
+            )
 
-            mail.close()
-            mail.logout()
+            # After sending the first follow-up, take a short pause and recheck for replies
+            time.sleep(check_interval)  # Pause before checking inbox again
+            if check_for_reply():
+                mail.close()
+                mail.logout()
+                return JsonResponse({'message': "Recipient replied after the first follow-up. No second follow-up email sent."}, status=200)
 
-            return JsonResponse({'replies_info': replies_info})
+            # If no reply after checking again, wait for the second wait time and send the second follow-up
+            time.sleep(second_wait_time)
+            if not check_for_reply():  # Check one final time before sending the second follow-up
+                send_mail(
+                    second_followup_subject,  # Second follow-up email subject
+                    second_followup_body,     # Second follow-up email message
+                    settings.EMAIL_HOST_USER,  # From email (sender's email)
+                    [recipient_email],  # To email (sending follow-up to the recipient)
+                    fail_silently=False,
+                )
+                mail.close()
+                mail.logout()
+                return JsonResponse({'message': "Second follow-up email has been successfully sent!"}, status=200)
+            else:
+                # If the recipient replied during the second wait time
+                mail.close()
+                mail.logout()
+                return JsonResponse({'message': "Recipient replied before the second follow-up. No second follow-up email sent."}, status=200)
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -1089,3 +1153,32 @@ class ProcessLinkedInView(APIView):
             return response
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+# Set up the Resend API key
+resend.api_key = settings.RESEND_API_KEY
+
+class SendBatchEmailAPIView(APIView):
+    def post(self, request):
+        # Validate incoming data using the serializer
+        serializer = ResendEmailSerializer(data=request.data.get('emails', []), many=True)
+        
+        if serializer.is_valid():
+            # Prepare the email parameters for Resend API
+            params = [
+                {
+                    "from": email['from_email'],
+                    "to": email['to'],
+                    "subject": email['subject'],
+                    "html": email['html']
+                } for email in serializer.validated_data
+            ]
+            
+            try:
+                # Send the batch email
+                response = resend.Batch.send(params)
+                return Response({"status": "Emails sent successfully!", "response": response}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        

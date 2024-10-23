@@ -197,6 +197,8 @@ AWS_DEFAULT_ACL = None
 AWS_S3_REGION_NAME = "us-east-2"
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 
+RESEND_API_KEY = "re_2pYm9V9u_3bUFZXpLRi6bRXWkjqsFRLpf"
+
 DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
 
 django_heroku.settings(locals())

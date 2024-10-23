@@ -81,4 +81,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 class DeleteLeadsSerializer(serializers.Serializer):
     delete_list = serializers.ListField(child=serializers.CharField())
     campaign_name = serializers.CharField()
-
+    
+class ResendEmailSerializer(serializers.Serializer):
+    from_email = serializers.EmailField()
+    to = serializers.ListField(
+        child=serializers.EmailField(),
+        min_length=1
+    )
+    subject = serializers.CharField(max_length=255)
+    html = serializers.CharField()
