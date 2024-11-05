@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django import forms
 from import_export.admin import ImportExportModelAdmin
 from .models import Contact
-from .models import Campaign_Emails, Campaign, Profile, Email, Instructions
+from .models import Campaign_Emails, Campaign, Profile, Email, Instructions, Schedule
 
 class ContactAdmin(ImportExportModelAdmin):
     list_display = ('first_name', 'last_name', 'email', 'title', 'company', 'type', 'location', 'level', 'university', 'linkedin')
@@ -44,3 +44,10 @@ class InstructionsAdmin(admin.ModelAdmin):
     list_display = ('user', 'first_name', 'last_name', 'email', 'app_password', 'second_email', 'second_app_password', 'third_email', 'third_app_password')
 
 admin.site.register(Instructions, InstructionsAdmin)
+
+class ScheduleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'start_time', 'end_time', 'timezone', 'daily_limit', 'emails_sent_today')
+    search_fields = ('name', 'user__email')  
+    list_filter = ('timezone', 'days', 'user')  
+
+admin.site.register(Schedule, ScheduleAdmin)

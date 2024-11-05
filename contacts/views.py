@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views import View
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.core import serializers as django_serializers
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -18,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-from .models import Contact, Campaign_Emails, Campaign, Email, Instructions
+from .models import Contact, Campaign_Emails, Campaign, Email, Instructions, Schedule
 from .serializers import ContactSerializer, Campaign_EmailsSerializer, CampaignSerializer, EmailSerializer, InstructionsSerializer, UserRegisterSerializer, ProfileSerializer, DeleteLeadsSerializer, ResendEmailSerializer
 from rest_framework.authentication import SessionAuthentication
 from knox.auth import TokenAuthentication
@@ -54,14 +55,17 @@ from .helpers import getEmailFromContactId, getFirstNameFromContactId, getLastNa
 import csv
 import json
 import requests
+import random
 import logging
 import traceback
-from datetime import date
+from datetime import date, datetime, timedelta
 import email
 from email.utils import parseaddr
 import os
+import pytz
 import resend
 from typing import List
+from .tasks import check_for_replies_task, send_follow_up_email_task
 
 def about(request):
     return render(request, 'about.html')
@@ -1181,4 +1185,202 @@ class SendBatchEmailAPIView(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ScheduleAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        """
+        Create or update a schedule for the authenticated user.
+        """
+        try:
+            user = request.user
+            data = request.data
+
+            name = data.get('name')
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
+            days = data.get('days')
+            timezone_name = data.get('timezone')
+            daily_limit = data.get('daily_limit')
+            min_interval = data.get('min_interval')
+            max_interval = data.get('max_interval')
+
+            if not all([name, start_time, end_time, days, timezone_name, daily_limit, min_interval, max_interval]):
+                return Response({'error': 'Missing required parameters'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create or update the schedule instance in the database
+            schedule, created = Schedule.objects.update_or_create(
+                user=user,
+                name=name,
+                defaults={
+                    'start_time': datetime.strptime(start_time, "%I:%M %p").time(),
+                    'end_time': datetime.strptime(end_time, "%I:%M %p").time(),
+                    'days': days,
+                    'timezone': timezone_name,
+                    'daily_limit': daily_limit,
+                    'min_interval': min_interval,
+                    'max_interval': max_interval,
+                    'last_email_time': None
+                }
+            )
+
+            message = 'Schedule created successfully' if created else 'Schedule updated successfully'
+            return Response({'message': message, 'schedule': schedule.name}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request):
+        """
+        Check if an email can be sent or simulate sending an email.
+        """
+        try:
+            user = request.user
+            action = request.query_params.get('action', 'check')  # Default to 'check'
+            schedule_name = request.query_params.get('name')
+
+            if not schedule_name:
+                return Response({'error': 'Schedule name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get the user's schedule by name
+            try:
+                schedule = Schedule.objects.get(user=user, name=schedule_name)
+            except Schedule.DoesNotExist:
+                return Response({'error': 'No schedule found with the specified name'}, status=status.HTTP_404_NOT_FOUND)
+
+            current_time = timezone.now()
+            tz = pytz.timezone(schedule.timezone)
+            local_time = current_time.astimezone(tz)
+
+            # Check if today is within the scheduled days
+            if local_time.strftime('%A') not in schedule.days:
+                return Response({'message': 'Today is not within the scheduled days.'}, status=status.HTTP_200_OK)
+
+            # Check if the current time is within the start and end time
+            if not (schedule.start_time <= local_time.time() <= schedule.end_time):
+                return Response({'message': 'Current time is not within the schedule hours.'}, status=status.HTTP_200_OK)
+
+            # Reset daily counter if the last email was sent on a previous day
+            if schedule.last_email_time and schedule.last_email_time.date() != current_time.date():
+                schedule.emails_sent_today = 0
+
+            # Check if the daily limit has been reached
+            if schedule.emails_sent_today >= schedule.daily_limit:
+                return Response({'message': 'Daily limit reached.'}, status=status.HTTP_200_OK)
+
+            if action == 'check':
+                return Response({'message': 'Email can be sent according to the schedule.'}, status=status.HTTP_200_OK)
+            elif action == 'send':
+                # Check if the next send time interval has passed
+                if schedule.last_email_time:
+                    min_interval_delta = timedelta(minutes=schedule.min_interval)
+                    if current_time < schedule.last_email_time + min_interval_delta:
+                        return Response({'message': 'Waiting for the next interval to send email.'}, status=status.HTTP_200_OK)
+
+                # Simulate sending the email
+                schedule.last_email_time = current_time
+                schedule.emails_sent_today += 1
+                schedule.save()
+                return Response({'message': 'Email sending simulation complete.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Invalid action parameter. Use "check" or "send".'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+class SendScheduledEmailAPIView(APIView):
+    def post(self, request):
+        try:
+            # Load JSON data from request body
+            data = request.data
+            
+            # Extract email parameters
+            mail_subject = data.get('mailSubject', '')
+            mail_content_html = data.get('mailContentHtml', '')
+            recepients_mail_list = data.get('recepientsMailList', [])
+            
+            # Extract schedule parameters
+            schedule_data = data.get('schedule')
+            if not schedule_data:
+                return Response({'error': 'Schedule data is missing'}, status=status.HTTP_400_BAD_REQUEST)
+
+            schedule_name = schedule_data.get('name')
+            daily_limit = schedule_data.get('daily_limit', 10)
+            min_interval = schedule_data.get('min_interval', 1)
+            max_interval = schedule_data.get('max_interval', 2)
+            timezone_name = schedule_data.get('timezone', 'UTC')  # Default to UTC if not provided
+
+            # Check for required email parameters
+            if not all([mail_subject, mail_content_html, recepients_mail_list]):
+                return Response({'error': 'Required email parameters missing or empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get the user's schedule
+            user = request.user
+            try:
+                schedule = Schedule.objects.get(user=user, name=schedule_name)
+            except Schedule.DoesNotExist:
+                return Response({'error': 'No schedule found with the specified name'}, status=status.HTTP_404_NOT_FOUND)
+
+            current_time = timezone.now()
+            tz = pytz.timezone(timezone_name)  # Use the provided timezone
+            local_time = current_time.astimezone(tz)
+
+            # Get start_time and end_time as time objects
+            start_time_obj = schedule.start_time
+            end_time_obj = schedule.end_time
+
+            # Check if today is within the scheduled days
+            if local_time.strftime('%A') not in schedule.days:
+                return Response({'message': 'Today is not within the scheduled days.'}, status=status.HTTP_200_OK)
+
+            # Check if the current time is within the start and end time
+            if not (start_time_obj <= local_time.time() <= end_time_obj):
+                return Response({'message': 'Current time is not within the schedule hours.'}, status=status.HTTP_200_OK)
+
+            # Reset daily counter if the last email was sent on a previous day
+            if schedule.last_email_time and schedule.last_email_time.date() != current_time.date():
+                schedule.emails_sent_today = 0
+                schedule.last_email_time = None  # Reset last_email_time for a new day
+
+            # Check if the daily limit has been reached
+            if schedule.emails_sent_today >= daily_limit:
+                return Response({'message': 'Daily limit reached.'}, status=status.HTTP_200_OK)
+
+            # Loop through each recipient and send email
+            for recipient_email in recepients_mail_list:
+                # Check if the next send time interval has passed
+                if schedule.last_email_time:
+                    min_interval_delta = timedelta(minutes=min_interval)
+                    if current_time < schedule.last_email_time + min_interval_delta:
+                        wait_time = (schedule.last_email_time + min_interval_delta - current_time).total_seconds()
+                        time.sleep(wait_time)
+
+                # Create message object
+                msg = MIMEMultipart()
+                msg['From'] = data.get('mailUname')  # Use the sender's email
+                msg['To'] = recipient_email
+                msg['Subject'] = mail_subject
+                msg.attach(MIMEText(mail_content_html, 'html'))
+
+                # Send message object as email using smtplib
+                with smtplib.SMTP_SSL(data.get('smtpHost'), data.get('smtpPort')) as s:
+                    s.login(data.get('mailUname'), data.get('mailPwd'))  # login with credentials
+                    msgText = msg.as_string()
+                    sendErrs = s.sendmail(msg['From'], recipient_email, msgText)
+
+                # Check if errors occurred and handle them accordingly
+                if sendErrs:
+                    raise Exception("Errors occurred while sending email", sendErrs)
+
+                # Update schedule information after each email sent
+                schedule.last_email_time = timezone.now()  # Update the last email time after sending
+                schedule.emails_sent_today += 1
+                schedule.save()
+
+
+            return Response({'message': 'Emails sent successfully'})
+
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON data in request body'}, status=status.HTTP_400_BAD_REQUEST)
+        except smtplib.SMTPException as e:
+            return Response({'error': f'SMTP error occurred: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

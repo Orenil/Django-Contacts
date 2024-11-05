@@ -201,4 +201,14 @@ RESEND_API_KEY = "re_2pYm9V9u_3bUFZXpLRi6bRXWkjqsFRLpf"
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# CELERY_BROKER_URL = 'rediss://:pc42144e681c42c004750236c6530b6bf0d8f0d15e0d2fdff3d77a65c046722ad@ec2-98-80-88-217.compute-1.amazonaws.com:27350'
+# CELERY_RESULT_BACKEND = 'rediss://:pc42144e681c42c004750236c6530b6bf0d8f0d15e0d2fdff3d77a65c046722ad@ec2-98-80-88-217.compute-1.amazonaws.com:27349'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'US/Eastern'
+
 django_heroku.settings(locals())
+

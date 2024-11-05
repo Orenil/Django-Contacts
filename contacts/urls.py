@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView, EmailCountsAPIView, CheckRepliedEmailsAPIView, ProcessLinkedInView, TotalContactsAPIView, TotalLeadsInCampaignAPIView, SendBatchEmailAPIView
+from .views import ContactListAPIView, CampaignPageAPIView, SaveInstructionsAPIView, HomeAPIView, LoginAPIView, LogoutAPIView, UserRegisterAPIView, UploadCampaignEmailsAPIView, SelectedContactsAPIView, ProfileAPIView, DeleteLeadsFromCampaignAPIView, SendIndividualEmailAPIView, EmailCountsAPIView, CheckRepliedEmailsAPIView, ProcessLinkedInView, TotalContactsAPIView, TotalLeadsInCampaignAPIView, SendBatchEmailAPIView, ScheduleAPIView, SendScheduledEmailAPIView
 
 urlpatterns = [
     path('', HomeAPIView.as_view(), name='home'),
@@ -40,6 +40,8 @@ urlpatterns = [
     path('contacts/total/', TotalContactsAPIView.as_view(), name='total-contacts'),
     path('leads/total/', TotalLeadsInCampaignAPIView.as_view(), name='total-leads'), 
     path('send-batch-emails/', SendBatchEmailAPIView.as_view(), name='send-batch-emails'),
+    path('schedule/', ScheduleAPIView.as_view(), name='schedule_api'),
+    path('send-scheduled-email/', SendScheduledEmailAPIView.as_view(), name='send-scheduled-email-api'),
 ]
 
 if settings.DEBUG:

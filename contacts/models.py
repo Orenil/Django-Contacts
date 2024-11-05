@@ -76,6 +76,22 @@ class Instructions(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+class Schedule(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Assuming each schedule is linked to a user
+    name = models.CharField(max_length=255)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    days = models.JSONField()  # Store days as a JSON array
+    timezone = models.CharField(max_length=100)
+    daily_limit = models.PositiveIntegerField()
+    min_interval = models.PositiveIntegerField()  # Minimum interval in minutes
+    max_interval = models.PositiveIntegerField()  # Maximum interval in minutes
+    last_email_time = models.DateTimeField(null=True, blank=True)  # When the last email was sent
+    emails_sent_today = models.PositiveIntegerField(default=0)  # Counter for emails sent today
+
+    def __str__(self):
+        return self.name
     
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
