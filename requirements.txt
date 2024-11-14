@@ -71,7 +71,6 @@ pytz==2024.1
 PyYAML==6.0.1
 redis==5.2.0
 requests==2.32.3
-resend==0.7.3
 rq==1.8.1
 rq-scheduler==0.14.0
 s3transfer==0.10.0
