@@ -41,6 +41,11 @@ from .forms import UserRegisterForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.conf import settings
+import django_rq
+from rq import Queue
+from rq import SimpleWorker
+from redis import Redis
+from django_rq import get_scheduler
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -65,7 +70,7 @@ import os
 import pytz
 import resend
 from typing import List
-from .tasks import check_for_replies_task, send_follow_up_email_task
+from .tasks import check_for_reply_task, send_followup_email
 
 def about(request):
     return render(request, 'about.html')
@@ -922,7 +927,7 @@ class EmailCountsAPIView(APIView):
 class CheckRepliedEmailsAPIView(APIView):
     def get(self, request):
         try:
-            data = json.loads(request.body) if request.body else {}  # Get JSON data from request
+            data = json.loads(request.body) if request.body else {}
 
             # Extract parameters from JSON data
             host = data.get('host')
@@ -931,83 +936,81 @@ class CheckRepliedEmailsAPIView(APIView):
             subject_keyword = data.get('subject_keyword')
             followup_subject = data.get('followup_subject')
             followup_body = data.get('followup_body')
-            wait_time = data.get('wait_time')  # Default to 2 minutes if not specified
-            second_wait_time = data.get('second_wait_time')  # Second wait time (default to 5 minutes)
-            check_interval = data.get('check_interval')  # How long to wait before checking the inbox after sending follow-up
+            wait_time = data.get('wait_time')
+            second_wait_time = data.get('second_wait_time')
+            check_interval = data.get('check_interval')
             second_followup_subject = data.get('second_followup_subject')
             second_followup_body = data.get('second_followup_body')
-            recipient_email = data.get('recipient_email')
+            recipient_emails = data.get('recipient_emails')
 
-            if not all([host, username, password, subject_keyword, recipient_email, second_followup_subject, second_followup_body]):
+            if not all([host, username, password, subject_keyword, recipient_emails, second_followup_subject, second_followup_body]):
                 return JsonResponse({'error': 'Missing required parameters'}, status=400)
+
+            if not isinstance(recipient_emails, list) or not recipient_emails:
+                return JsonResponse({'error': 'recipient_emails must be a non-empty list'}, status=400)
 
             def check_for_reply():
                 """
-                Checks the inbox for replies from the recipient with the matching subject keyword.
+                Checks the inbox for replies from any recipient with the matching subject keyword.
                 """
-                mail.select("inbox")  # Select the inbox folder
+                mail.select("inbox")
                 status, search_data = mail.search(None, '(SUBJECT "{}")'.format(subject_keyword))
                 search_data = search_data[0].split()
 
-                # Check if any emails are replies from the recipient
                 for num in search_data:
-                    status, data = mail.fetch(num, '(RFC822)')  # Fetch the entire email (headers and body)
+                    status, data = mail.fetch(num, '(RFC822)')
                     raw_email = data[0][1]
                     msg = email.message_from_bytes(raw_email)
-
-                    # Extract the 'From' email address
                     from_email = parseaddr(msg['From'])[1]
 
-                    # Check if the reply is from the recipient_email
-                    if from_email == recipient_email:
+                    if from_email in recipient_emails:
                         return True
                 return False
 
-            # Connect to the email server using the sender's (username) credentials
+            # Connect to the email server
             mail = imaplib.IMAP4_SSL(host)
             mail.login(username, password)
 
-            # Check if a reply has already been received before sending the first follow-up
+            # Check if a reply has already been received
             if check_for_reply():
                 mail.close()
                 mail.logout()
-                return JsonResponse({'message': "Recipient has already replied. No follow-up email sent."}, status=200)
+                return JsonResponse({'message': "A recipient has already replied. No follow-up email sent."}, status=200)
 
-            # If no reply is found, wait for the specified time and send the first follow-up email
+            # Wait and send the first follow-up email to all recipients
             time.sleep(wait_time)
             send_mail(
-                followup_subject,  # Email subject
-                followup_body,     # Email message
-                settings.EMAIL_HOST_USER,  # From email (sender's email)
-                [recipient_email],  # To email (sending follow-up to the recipient)
+                followup_subject,
+                followup_body,
+                settings.EMAIL_HOST_USER,
+                recipient_emails,
                 fail_silently=False,
             )
 
-            # After sending the first follow-up, take a short pause and recheck for replies
-            time.sleep(check_interval)  # Pause before checking inbox again
+            # Check for replies after the first follow-up
+            time.sleep(check_interval)
             if check_for_reply():
                 mail.close()
                 mail.logout()
-                return JsonResponse({'message': "Recipient replied after the first follow-up. No second follow-up email sent."}, status=200)
+                return JsonResponse({'message': "A recipient replied after the first follow-up. No second follow-up email sent."}, status=200)
 
-            # If no reply after checking again, wait for the second wait time and send the second follow-up
+            # Wait and send the second follow-up if no reply is received
             time.sleep(second_wait_time)
-            if not check_for_reply():  # Check one final time before sending the second follow-up
+            if not check_for_reply():
                 send_mail(
-                    second_followup_subject,  # Second follow-up email subject
-                    second_followup_body,     # Second follow-up email message
-                    settings.EMAIL_HOST_USER,  # From email (sender's email)
-                    [recipient_email],  # To email (sending follow-up to the recipient)
+                    second_followup_subject,
+                    second_followup_body,
+                    settings.EMAIL_HOST_USER,
+                    recipient_emails,
                     fail_silently=False,
                 )
                 mail.close()
                 mail.logout()
-                return JsonResponse({'message': "Second follow-up email has been successfully sent!"}, status=200)
+                return JsonResponse({'message': "Second follow-up email has been successfully sent to all recipients!"}, status=200)
             else:
-                # If the recipient replied during the second wait time
                 mail.close()
                 mail.logout()
-                return JsonResponse({'message': "Recipient replied before the second follow-up. No second follow-up email sent."}, status=200)
+                return JsonResponse({'message': "A recipient replied before the second follow-up. No second follow-up email sent."}, status=200)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
