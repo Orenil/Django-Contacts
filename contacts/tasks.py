@@ -1,4 +1,3 @@
-import django_rq
 import imaplib
 import email
 from email.utils import parseaddr

@@ -41,11 +41,7 @@ from .forms import UserRegisterForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.conf import settings
-import django_rq
-from rq import Queue
-from rq import SimpleWorker
 from redis import Redis
-from django_rq import get_scheduler
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase

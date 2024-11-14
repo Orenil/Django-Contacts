@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'contacts',
     'knox',
-    'django_rq',
     'import_export',
     'crispy_forms',
     'django.contrib.admin',
